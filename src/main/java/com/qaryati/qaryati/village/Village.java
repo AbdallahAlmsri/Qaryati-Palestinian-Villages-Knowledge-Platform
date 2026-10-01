@@ -26,7 +26,15 @@ public class Village {
     private Integer elevationM;
 
     protected Village() {
-        // required by JPA
+    }
+
+    public Village(Governorate governorate, java.math.BigDecimal latitude, java.math.BigDecimal longitude,
+                   String locationDescription, Integer elevationM) {
+        this.governorate = governorate;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.locationDescription = locationDescription;
+        this.elevationM = elevationM;
     }
 
     public Long getId() {
