@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: qaryati-db
+    environment:
+      POSTGRES_DB: qaryati
+      POSTGRES_USER: qaryati_user
+      POSTGRES_PASSWORD: change_me_locally
+    ports:
+      - "5544:5432"
+    volumes:
+      - qaryati_pgdata:/var/lib/postgresql/data
+
+volumes:
+  qaryati_pgdata:
