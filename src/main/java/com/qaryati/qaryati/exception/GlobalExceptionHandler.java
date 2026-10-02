@@ -8,7 +8,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
+import com.qaryati.qaryati.population.InvalidReviewException;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -52,5 +52,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleDataIntegrity(org.springframework.dao.DataIntegrityViolationException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(errorBody("DUPLICATE_OR_INVALID_DATA", "This record conflicts with an existing one (e.g., duplicate village/year/source) or violates a data constraint"));
+    }
+
+    @ExceptionHandler(InvalidReviewException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidReview(InvalidReviewException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(errorBody("INVALID_REVIEW", ex.getMessage()));
     }
 }

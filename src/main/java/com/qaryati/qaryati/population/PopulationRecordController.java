@@ -32,4 +32,15 @@ public class PopulationRecordController {
         PopulationRecord saved = populationRecordService.createRecord(villageId, request);
         return ResponseEntity.status(201).body(PopulationRecordResponse.from(saved));
     }
+
+    @PatchMapping("/{recordId}/review")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('VERIFIER', 'ADMIN')")
+    public ResponseEntity<PopulationRecordResponse> reviewRecord(
+            @PathVariable Long villageId,
+            @PathVariable Long recordId,
+            @Valid @RequestBody ReviewDecisionRequest request
+    ) {
+        PopulationRecord reviewed = populationRecordService.reviewRecord(villageId, recordId, request);
+        return ResponseEntity.ok(PopulationRecordResponse.from(reviewed));
+    }
 }
