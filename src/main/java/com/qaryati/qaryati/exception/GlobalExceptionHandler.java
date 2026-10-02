@@ -1,6 +1,7 @@
 package com.qaryati.qaryati.exception;
 
 import com.qaryati.qaryati.village.GovernorateNotFoundException;
+import com.qaryati.qaryati.population.VillageNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -39,5 +40,17 @@ public class GlobalExceptionHandler {
         body.put("code", code);
         body.put("message", message);
         return body;
+    }
+
+    @ExceptionHandler(VillageNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleVillageNotFound(VillageNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(errorBody("VILLAGE_NOT_FOUND", ex.getMessage()));
+    }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrity(org.springframework.dao.DataIntegrityViolationException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(errorBody("DUPLICATE_OR_INVALID_DATA", "This record conflicts with an existing one (e.g., duplicate village/year/source) or violates a data constraint"));
     }
 }
