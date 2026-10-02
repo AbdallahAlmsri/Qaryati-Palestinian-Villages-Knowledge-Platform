@@ -17,6 +17,10 @@ public class Governorate {
         
     }
 
+    public Governorate(String name) {
+        this.name = name;
+    }
+
     public Long getId() {
         return id;
     }
