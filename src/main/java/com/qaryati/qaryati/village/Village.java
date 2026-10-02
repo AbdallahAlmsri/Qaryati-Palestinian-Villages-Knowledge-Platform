@@ -25,7 +25,7 @@ public class Village {
     @Column(name = "elevation_m")
     private Integer elevationM;
 
-    protected Village() {
+    public Village() {
     }
 
     public Village(Governorate governorate, java.math.BigDecimal latitude, java.math.BigDecimal longitude,
