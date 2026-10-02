@@ -51,7 +51,7 @@ public class PopulationRecord {
     private LocalDateTime reviewedAt;
 
     protected PopulationRecord() {
-        // required by JPA
+
     }
 
     public PopulationRecord(Village village, Integer year, Integer population, String source,
@@ -79,4 +79,10 @@ public class PopulationRecord {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public User getReviewedBy() { return reviewedBy; }
     public LocalDateTime getReviewedAt() { return reviewedAt; }
+
+    public void review(PopulationStatus newStatus, User reviewer) {
+        this.status = newStatus;
+        this.reviewedBy = reviewer;
+        this.reviewedAt = LocalDateTime.now();
+    }
 }

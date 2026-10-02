@@ -51,4 +51,27 @@ public class PopulationRecordService {
 
         return populationRecordRepository.save(record);
     }
+    public PopulationRecord reviewRecord(Long villageId, Long recordId, ReviewDecisionRequest request) {
+        PopulationRecord record = populationRecordRepository.findById(recordId)
+                .orElseThrow(() -> new InvalidReviewException("Population record with id " + recordId + " does not exist"));
+
+        if (!java.util.Objects.equals(record.getVillage().getId(), villageId)) {
+            throw new InvalidReviewException("Record " + recordId + " does not belong to village " + villageId);
+        }
+
+        if (record.getStatus() != PopulationStatus.PENDING) {
+            throw new InvalidReviewException("Only PENDING records can be reviewed; this record is already " + record.getStatus());
+        }
+
+        if (request.status() == PopulationStatus.PENDING) {
+            throw new InvalidReviewException("Cannot set review status back to PENDING");
+        }
+
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        User reviewer = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new IllegalStateException("Authenticated user not found: " + currentUsername));
+
+        record.review(request.status(), reviewer);
+        return populationRecordRepository.save(record);
+    }
 }

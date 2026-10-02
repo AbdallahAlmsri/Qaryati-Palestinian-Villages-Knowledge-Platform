@@ -79,4 +79,54 @@ class PopulationRecordServiceTest {
         assertThrows(VillageNotFoundException.class,
                 () -> populationRecordService.getHistory(999L));
     }
+
+    @Test
+    void reviewRecord_throwsException_whenRecordDoesNotExist() {
+        when(populationRecordRepository.findById(999L)).thenReturn(Optional.empty());
+
+        ReviewDecisionRequest request = new ReviewDecisionRequest(PopulationStatus.VERIFIED, "notes");
+
+        assertThrows(InvalidReviewException.class,
+                () -> populationRecordService.reviewRecord(1L, 999L, request));
+    }
+
+    @Test
+    void reviewRecord_throwsException_whenAlreadyReviewed() {
+        Village village = new Village();
+        User creator = new User("abdallah", "abdallah@example.com", "hashed", com.qaryati.qaryati.user.Role.CONTRIBUTOR);
+        PopulationRecord record = new PopulationRecord(village, 2020, 4500, "PCBS", null, null, creator);
+        record.review(PopulationStatus.VERIFIED, creator);
+
+        when(populationRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+
+        ReviewDecisionRequest request = new ReviewDecisionRequest(PopulationStatus.REJECTED, "too late");
+
+        assertThrows(InvalidReviewException.class,
+                () -> populationRecordService.reviewRecord(village.getId(), 1L, request));
+    }
+
+    @Test
+    void reviewRecord_succeeds_whenPendingAndReviewerAuthenticated() {
+        Village village = new Village();
+        User creator = new User("abdallah", "abdallah@example.com", "hashed", com.qaryati.qaryati.user.Role.CONTRIBUTOR);
+        User reviewer = new User("verifier1", "verifier1@example.com", "hashed", com.qaryati.qaryati.user.Role.VERIFIER);
+        PopulationRecord record = new PopulationRecord(village, 2020, 4500, "PCBS", null, null, creator);
+
+        var auth = new UsernamePasswordAuthenticationToken("verifier1", null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        when(populationRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+        when(userRepository.findByUsername("verifier1")).thenReturn(Optional.of(reviewer));
+        when(populationRecordRepository.save(any(PopulationRecord.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        ReviewDecisionRequest request = new ReviewDecisionRequest(PopulationStatus.VERIFIED, "looks correct");
+
+        PopulationRecord result = populationRecordService.reviewRecord(village.getId(), 1L, request);
+
+        assertEquals(PopulationStatus.VERIFIED, result.getStatus());
+        assertEquals(reviewer, result.getReviewedBy());
+
+        SecurityContextHolder.clearContext();
+    }
 }
