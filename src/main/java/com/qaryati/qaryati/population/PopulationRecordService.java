@@ -74,4 +74,27 @@ public class PopulationRecordService {
         record.review(request.status(), reviewer);
         return populationRecordRepository.save(record);
     }
+
+    public PopulationStatsResponse getStats(Long villageId, Integer fromYear, Integer toYear) {
+        if (!villageRepository.existsById(villageId)) {
+            throw new VillageNotFoundException(villageId);
+        }
+
+        if (fromYear > toYear) {
+            throw new InvalidReviewException("fromYear must not be after toYear");
+        }
+
+        List<Object[]> rows = populationRecordRepository.getPopulationStats(villageId, fromYear, toYear);
+        Object[] row = rows.isEmpty() ? new Object[]{null, null, null, 0L} : rows.get(0);
+
+        return new PopulationStatsResponse(
+                villageId,
+                fromYear,
+                toYear,
+                row[0] != null ? ((Number) row[0]).intValue() : null,
+                row[1] != null ? ((Number) row[1]).intValue() : null,
+                row[2] != null ? ((Number) row[2]).intValue() : null,
+                row[3] != null ? ((Number) row[3]).longValue() : 0L
+        );
+    }
 }
