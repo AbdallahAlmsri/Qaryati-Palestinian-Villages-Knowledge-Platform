@@ -43,4 +43,13 @@ public class PopulationRecordController {
         PopulationRecord reviewed = populationRecordService.reviewRecord(villageId, recordId, request);
         return ResponseEntity.ok(PopulationRecordResponse.from(reviewed));
     }
+
+    @GetMapping("/stats")
+    public PopulationStatsResponse getStats(
+            @PathVariable Long villageId,
+            @RequestParam Integer fromYear,
+            @RequestParam Integer toYear
+    ) {
+        return populationRecordService.getStats(villageId, fromYear, toYear);
+    }
 }

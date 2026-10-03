@@ -14,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -128,5 +129,37 @@ class PopulationRecordServiceTest {
         assertEquals(reviewer, result.getReviewedBy());
 
         SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void getStats_throwsException_whenVillageDoesNotExist() {
+        when(villageRepository.existsById(999L)).thenReturn(false);
+
+        assertThrows(VillageNotFoundException.class,
+                () -> populationRecordService.getStats(999L, 2000, 2020));
+    }
+
+    @Test
+    void getStats_throwsException_whenFromYearAfterToYear() {
+        when(villageRepository.existsById(1L)).thenReturn(true);
+
+        assertThrows(InvalidReviewException.class,
+                () -> populationRecordService.getStats(1L, 2030, 2000));
+    }
+
+    @Test
+    void getStats_returnsComputedStats_whenDataExists() {
+        when(villageRepository.existsById(1L)).thenReturn(true);
+
+        List<Object[]> mockResult = new ArrayList<>();
+        mockResult.add(new Object[]{4000, 4500, 4250, 2L});
+        when(populationRecordRepository.getPopulationStats(1L, 2000, 2025)).thenReturn(mockResult);
+
+        PopulationStatsResponse result = populationRecordService.getStats(1L, 2000, 2025);
+
+        assertEquals(4000, result.minPopulation());
+        assertEquals(4500, result.maxPopulation());
+        assertEquals(4250, result.avgPopulation());
+        assertEquals(2L, result.recordCount());
     }
 }
