@@ -39,6 +39,10 @@ public class GlobalExceptionHandler {
         body.put("timestamp", Instant.now().toString());
         body.put("code", code);
         body.put("message", message);
+        String correlationId = org.slf4j.MDC.get("correlationId");
+        if (correlationId != null) {
+            body.put("correlationId", correlationId);
+        }
         return body;
     }
 
