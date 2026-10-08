@@ -1,4 +1,4 @@
-package com.qaryati.qaryati.population;
+package com.qaryati.qaryati.village;
 
 public class VillageNotFoundException extends RuntimeException {
     public VillageNotFoundException(Long villageId) {

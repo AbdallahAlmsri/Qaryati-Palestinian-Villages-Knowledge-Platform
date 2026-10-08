@@ -1,7 +1,7 @@
 package com.qaryati.qaryati.geocoding;
 
 import com.qaryati.qaryati.governorate.Governorate;
-import com.qaryati.qaryati.population.VillageNotFoundException;
+import com.qaryati.qaryati.village.VillageNotFoundException;
 import com.qaryati.qaryati.village.Village;
 import com.qaryati.qaryati.village.VillageRepository;
 import org.junit.jupiter.api.Test;

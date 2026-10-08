@@ -1,7 +1,7 @@
 package com.qaryati.qaryati.exception;
 
 import com.qaryati.qaryati.village.GovernorateNotFoundException;
-import com.qaryati.qaryati.population.VillageNotFoundException;
+import com.qaryati.qaryati.village.VillageNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;

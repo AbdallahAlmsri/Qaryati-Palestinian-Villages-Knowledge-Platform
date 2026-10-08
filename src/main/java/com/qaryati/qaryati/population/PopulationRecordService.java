@@ -3,6 +3,7 @@ package com.qaryati.qaryati.population;
 import com.qaryati.qaryati.user.User;
 import com.qaryati.qaryati.user.UserRepository;
 import com.qaryati.qaryati.village.Village;
+import com.qaryati.qaryati.village.VillageNotFoundException;
 import com.qaryati.qaryati.village.VillageRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
