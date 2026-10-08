@@ -59,4 +59,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .body(errorBody("INVALID_REVIEW", ex.getMessage()));
     }
+
+    @ExceptionHandler(com.qaryati.qaryati.geocoding.GeocodingUnavailableException.class)
+    public ResponseEntity<Map<String, Object>> handleGeocodingUnavailable(com.qaryati.qaryati.geocoding.GeocodingUnavailableException ex) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(errorBody("GEOCODING_UNAVAILABLE", ex.getMessage()));
+    }
 }
