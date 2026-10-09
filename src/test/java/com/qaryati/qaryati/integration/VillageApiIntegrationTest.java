@@ -56,4 +56,41 @@ class VillageApiIntegrationTest extends AbstractIntegrationTest {
         assertEquals(422, response.status());
         assertTrue(response.body().contains("VALIDATION_FAILED"));
     }
+
+    @Test
+    void listVillages_searchIsCaseInsensitiveAndEscapesWildcards() throws Exception {
+        String token = registerUser(uniqueName("village"));
+        String marker = uniqueName("Search");
+        String json = VALID_VILLAGE.replace("Integration test village", marker);
+        assertEquals(201, call("POST", "/api/v1/villages", token, json).status());
+
+        ApiResponse found = call("GET", "/api/v1/villages?q=" + marker.toUpperCase(), null, null);
+        assertEquals(200, found.status());
+        assertTrue(found.body().contains("\"totalItems\":1"));
+
+        ApiResponse wildcard = call("GET", "/api/v1/villages?q=%25", null, null);
+        assertEquals(200, wildcard.status());
+        assertTrue(wildcard.body().contains("\"totalItems\":0"));
+    }
+
+    @Test
+    void listVillages_respectsPageSizeAndFilter() throws Exception {
+        ApiResponse paged = call("GET", "/api/v1/villages?size=1&page=0&sort=id,desc", null, null);
+        assertEquals(200, paged.status());
+        assertTrue(paged.body().contains("\"size\":1"));
+
+        ApiResponse noMatch = call("GET", "/api/v1/villages?governorateId=999", null, null);
+        assertEquals(200, noMatch.status());
+        assertTrue(noMatch.body().contains("\"totalItems\":0"));
+    }
+
+    @Test
+    void listVillages_rejectsInvalidQueries() throws Exception {
+        ApiResponse badSort = call("GET", "/api/v1/villages?sort=password,asc", null, null);
+        assertEquals(422, badSort.status());
+        assertTrue(badSort.body().contains("INVALID_QUERY"));
+
+        ApiResponse tooBig = call("GET", "/api/v1/villages?size=500", null, null);
+        assertEquals(422, tooBig.status());
+    }
 }

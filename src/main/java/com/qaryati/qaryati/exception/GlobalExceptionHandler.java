@@ -69,4 +69,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(errorBody("GEOCODING_UNAVAILABLE", ex.getMessage()));
     }
+
+    @ExceptionHandler(com.qaryati.qaryati.common.InvalidQueryException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidQuery(com.qaryati.qaryati.common.InvalidQueryException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(errorBody("INVALID_QUERY", ex.getMessage()));
+    }
 }
