@@ -22,7 +22,7 @@ class VillageApiIntegrationTest extends AbstractIntegrationTest {
     void createVillage_withoutToken_isRejected() throws Exception {
         ApiResponse response = call("POST", "/api/v1/villages", null, VALID_VILLAGE);
 
-        assertEquals(403, response.status());
+        assertEquals(401, response.status());
     }
 
     @Test
