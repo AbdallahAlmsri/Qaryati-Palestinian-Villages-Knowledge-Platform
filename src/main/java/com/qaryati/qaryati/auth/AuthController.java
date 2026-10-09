@@ -1,58 +1,28 @@
 package com.qaryati.qaryati.auth;
 
-import com.qaryati.qaryati.user.Role;
-import com.qaryati.qaryati.user.User;
-import com.qaryati.qaryati.user.UserRepository;
 import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
+    private final AuthService authService;
 
-    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtService = jwtService;
+    public AuthController(AuthService authService) {
+        this.authService = authService;
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
-        if (userRepository.existsByUsername(request.username())) {
-            return ResponseEntity.status(422).body("Username already taken");
-        }
-        if (userRepository.existsByEmail(request.email())) {
-            return ResponseEntity.status(422).body("Email already registered");
-        }
-
-        User user = new User(
-                request.username(),
-                request.email(),
-                passwordEncoder.encode(request.password()),
-                Role.CONTRIBUTOR
-        );
-        userRepository.save(user);
-
-        String token = jwtService.generateToken(user.getUsername(), user.getRole().name());
-        return ResponseEntity.ok(new AuthResponse(token, user.getUsername(), user.getRole().name()));
+    public AuthResponse register(@Valid @RequestBody RegisterRequest request) {
+        return authService.register(request);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
-        var userOpt = userRepository.findByUsername(request.username());
-
-        if (userOpt.isEmpty() || !passwordEncoder.matches(request.password(), userOpt.get().getPasswordHash())) {
-            return ResponseEntity.status(401).body("Invalid username or password");
-        }
-
-        User user = userOpt.get();
-        String token = jwtService.generateToken(user.getUsername(), user.getRole().name());
-        return ResponseEntity.ok(new AuthResponse(token, user.getUsername(), user.getRole().name()));
+    public AuthResponse login(@Valid @RequestBody LoginRequest request) {
+        return authService.login(request);
     }
 }

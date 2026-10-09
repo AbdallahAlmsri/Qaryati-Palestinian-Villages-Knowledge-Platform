@@ -25,6 +25,7 @@ class AuthIntegrationTest extends AbstractIntegrationTest {
         ApiResponse login = call("POST", "/api/v1/auth/login", null, credentials(username, "wrong-password"));
 
         assertEquals(401, login.status());
+        assertTrue(login.body().contains("INVALID_CREDENTIALS"));
     }
 
     @Test
@@ -37,5 +38,6 @@ class AuthIntegrationTest extends AbstractIntegrationTest {
         ApiResponse second = call("POST", "/api/v1/auth/register", null, json);
 
         assertEquals(422, second.status());
+        assertTrue(second.body().contains("USER_ALREADY_EXISTS"));
     }
 }

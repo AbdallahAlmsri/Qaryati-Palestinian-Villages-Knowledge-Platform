@@ -75,4 +75,54 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .body(errorBody("INVALID_QUERY", ex.getMessage()));
     }
+
+    private static final org.slf4j.Logger log =
+            org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(com.qaryati.qaryati.auth.InvalidCredentialsException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidCredentials(
+            com.qaryati.qaryati.auth.InvalidCredentialsException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(errorBody("INVALID_CREDENTIALS", ex.getMessage()));
+    }
+
+    @ExceptionHandler(com.qaryati.qaryati.auth.UserAlreadyExistsException.class)
+    public ResponseEntity<Map<String, Object>> handleUserExists(
+            com.qaryati.qaryati.auth.UserAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(errorBody("USER_ALREADY_EXISTS", ex.getMessage()));
+    }
+
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleUnreadableBody(
+            org.springframework.http.converter.HttpMessageNotReadableException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(errorBody("MALFORMED_REQUEST", "Request body is missing or is not valid JSON"));
+    }
+
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleTypeMismatch(
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(errorBody("INVALID_PARAMETER", "Parameter '" + ex.getName() + "' has an invalid value"));
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(
+            org.springframework.security.access.AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(errorBody("FORBIDDEN", "You do not have permission to perform this action"));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleUnexpected(Exception ex) {
+        // Spring's own web errors (404, 405, 415, missing parameter...) already carry a status code
+        if (ex instanceof org.springframework.web.ErrorResponse errorResponse) {
+            HttpStatus status = HttpStatus.valueOf(errorResponse.getStatusCode().value());
+            return ResponseEntity.status(status).body(errorBody(status.name(), status.getReasonPhrase()));
+        }
+        log.error("Unhandled exception", ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(errorBody("INTERNAL_ERROR", "An unexpected error occurred"));
+    }
 }
