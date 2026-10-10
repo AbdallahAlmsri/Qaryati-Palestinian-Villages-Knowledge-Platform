@@ -3,15 +3,15 @@ services:
     image: postgres:16
     container_name: qaryati-db
     environment:
-      POSTGRES_DB: qaryati
-      POSTGRES_USER: qaryati_user
-      POSTGRES_PASSWORD: change_me_locally
+      POSTGRES_DB: ${DB_NAME:-qaryati}
+      POSTGRES_USER: ${DB_USERNAME:?Copy .env.example to .env first}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Copy .env.example to .env first}
     ports:
-      - "5544:5432"
+      - "${DB_PORT:-5544}:5432"
     volumes:
       - qaryati_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U qaryati_user -d qaryati"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME:-qaryati}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -20,11 +20,12 @@ services:
     build: .
     container_name: qaryati-app
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/qaryati
-      DB_USERNAME: qaryati_user
-      DB_PASSWORD: change_me_locally
-      APP_JWT_SECRET: this-is-a-temporary-local-only-secret-change-it-before-production-use-12345
-      APP_JWT_EXPIRATION_MS: 3600000
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME:-qaryati}
+      DB_USERNAME: ${DB_USERNAME:?Copy .env.example to .env first}
+      DB_PASSWORD: ${DB_PASSWORD:?Copy .env.example to .env first}
+      APP_JWT_SECRET: ${APP_JWT_SECRET:?Set APP_JWT_SECRET in .env}
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:3000}
     ports:
       - "8080:8080"
     depends_on:

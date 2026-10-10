@@ -17,7 +17,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import java.util.List;
 
 @Configuration
@@ -78,5 +79,14 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(authRateLimitFilter, JwtAuthFilter.class);
         return http.build();
+    }
+
+    @Bean
+    public UserDetailsService userDetailsService() {
+        // Logins go through AuthService and JWT. This bean only stops Spring Boot from creating
+        // a default user with a random password that it prints in the log.
+        return username -> {
+            throw new UsernameNotFoundException("Not used: authentication is handled by AuthService");
+        };
     }
 }
