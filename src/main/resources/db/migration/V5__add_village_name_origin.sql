@@ -1,0 +1,6 @@
+ALTER TABLE village_names
+    ADD COLUMN name_origin TEXT,
+ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+ADD COLUMN created_by BIGINT REFERENCES users(id),
+ADD COLUMN reviewed_by BIGINT REFERENCES users(id),
+ADD COLUMN reviewed_at TIMESTAMPTZ;
