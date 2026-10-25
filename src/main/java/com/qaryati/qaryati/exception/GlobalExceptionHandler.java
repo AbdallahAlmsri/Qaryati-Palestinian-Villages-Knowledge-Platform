@@ -125,4 +125,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(errorBody("INTERNAL_ERROR", "An unexpected error occurred"));
     }
+
+    @ExceptionHandler(com.qaryati.qaryati.history.InvalidHistoryReviewException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidHistoryReview(
+            com.qaryati.qaryati.history.InvalidHistoryReviewException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(errorBody("INVALID_HISTORY_REVIEW", ex.getMessage()));
+    }
 }
