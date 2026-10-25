@@ -8,7 +8,8 @@ public record VillageResponse(
         BigDecimal latitude,
         BigDecimal longitude,
         String locationDescription,
-        Integer elevationM
+        Integer elevationM,
+        String municipalityName
 ) {
     public static VillageResponse from(Village village) {
         return new VillageResponse(
@@ -17,7 +18,8 @@ public record VillageResponse(
                 village.getLatitude(),
                 village.getLongitude(),
                 village.getLocationDescription(),
-                village.getElevationM()
+                village.getElevationM(),
+                village.getMunicipality() == null ? null : village.getMunicipality().getName()
         );
     }
 }

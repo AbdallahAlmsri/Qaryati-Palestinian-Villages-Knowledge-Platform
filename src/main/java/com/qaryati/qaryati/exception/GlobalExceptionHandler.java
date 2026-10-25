@@ -58,6 +58,13 @@ public class GlobalExceptionHandler {
                 .body(errorBody("DUPLICATE_OR_INVALID_DATA", "This record conflicts with an existing one (e.g., duplicate village/year/source) or violates a data constraint"));
     }
 
+    @ExceptionHandler(com.qaryati.qaryati.governorate.InvalidMunicipalityException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidMunicipality(
+            com.qaryati.qaryati.governorate.InvalidMunicipalityException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(errorBody("INVALID_MUNICIPALITY", ex.getMessage()));
+    }
+
     @ExceptionHandler(InvalidReviewException.class)
     public ResponseEntity<Map<String, Object>> handleInvalidReview(InvalidReviewException ex) {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
