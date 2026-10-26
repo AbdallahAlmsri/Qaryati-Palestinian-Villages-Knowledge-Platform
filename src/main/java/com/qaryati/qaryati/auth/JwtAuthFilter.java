@@ -1,5 +1,6 @@
 package com.qaryati.qaryati.auth;
 
+import com.qaryati.qaryati.user.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,9 +18,11 @@ import java.util.List;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final UserRepository userRepository;
 
-    public JwtAuthFilter(JwtService jwtService) {
+    public JwtAuthFilter(JwtService jwtService, UserRepository userRepository) {
         this.jwtService = jwtService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -36,13 +39,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             if (jwtService.isValid(token)) {
                 String username = jwtService.extractUsername(token);
-                String role = jwtService.extractRole(token);
 
-                var authority = new SimpleGrantedAuthority("ROLE_" + role);
-                var authToken = new UsernamePasswordAuthenticationToken(
-                        username, null, List.of(authority)
-                );
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                userRepository.findByUsername(username).ifPresent(user -> {
+                    var authority = new SimpleGrantedAuthority(
+                            "ROLE_" + user.getRole().name()
+                    );
+
+                    var authToken = new UsernamePasswordAuthenticationToken(
+                            username, null, List.of(authority)
+                    );
+
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                });
             }
         }
 

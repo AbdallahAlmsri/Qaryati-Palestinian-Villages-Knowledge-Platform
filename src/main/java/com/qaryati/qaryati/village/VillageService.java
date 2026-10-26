@@ -10,6 +10,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 import java.util.TreeSet;
@@ -97,6 +98,34 @@ public class VillageService {
         );
 
         return villageRepository.save(village);
+    }
+
+    @Transactional
+    public Village updateVillage(Long villageId, UpdateVillageRequest request) {
+        Village village = villageRepository.findById(villageId)
+                .orElseThrow(() -> new VillageNotFoundException(villageId));
+
+        Governorate governorate = governorateRepository.findById(request.governorateId())
+                .orElseThrow(() -> new GovernorateNotFoundException(request.governorateId()));
+
+        village.update(
+                governorate,
+                request.latitude(),
+                request.longitude(),
+                request.locationDescription(),
+                request.elevationM()
+        );
+
+        return villageRepository.save(village);
+    }
+
+    @Transactional
+    public void deleteVillage(Long villageId) {
+        Village village = villageRepository.findById(villageId)
+                .orElseThrow(() -> new VillageNotFoundException(villageId));
+
+        villageRepository.delete(village);
+        villageRepository.flush();
     }
 
     private Sort parseSort(String sort) {

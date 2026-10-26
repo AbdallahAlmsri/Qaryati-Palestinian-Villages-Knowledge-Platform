@@ -28,8 +28,17 @@ public class Village {
     public Village() {
     }
 
-    public Village(Governorate governorate, java.math.BigDecimal latitude, java.math.BigDecimal longitude,
+    public Village(Governorate governorate, BigDecimal latitude, BigDecimal longitude,
                    String locationDescription, Integer elevationM) {
+        this.governorate = governorate;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.locationDescription = locationDescription;
+        this.elevationM = elevationM;
+    }
+
+    public void update(Governorate governorate, BigDecimal latitude, BigDecimal longitude,
+                       String locationDescription, Integer elevationM) {
         this.governorate = governorate;
         this.latitude = latitude;
         this.longitude = longitude;
