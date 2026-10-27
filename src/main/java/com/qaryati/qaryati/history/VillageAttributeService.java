@@ -1,5 +1,6 @@
 package com.qaryati.qaryati.history;
 
+import com.qaryati.qaryati.audit.AuditLogService;
 import com.qaryati.qaryati.user.User;
 import com.qaryati.qaryati.user.UserRepository;
 import com.qaryati.qaryati.village.Village;
@@ -7,6 +8,7 @@ import com.qaryati.qaryati.village.VillageNotFoundException;
 import com.qaryati.qaryati.village.VillageRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -16,13 +18,16 @@ public class VillageAttributeService {
     private final VillageAttributeRepository villageAttributeRepository;
     private final VillageRepository villageRepository;
     private final UserRepository userRepository;
+    private final AuditLogService auditLogService;
 
     public VillageAttributeService(VillageAttributeRepository villageAttributeRepository,
                                    VillageRepository villageRepository,
-                                   UserRepository userRepository) {
+                                   UserRepository userRepository,
+                                   AuditLogService auditLogService) {
         this.villageAttributeRepository = villageAttributeRepository;
         this.villageRepository = villageRepository;
         this.userRepository = userRepository;
+        this.auditLogService = auditLogService;
     }
 
     public List<VillageAttribute> getAttributes(Long villageId) {
@@ -55,6 +60,7 @@ public class VillageAttributeService {
         return villageAttributeRepository.save(attribute);
     }
 
+    @Transactional
     public VillageAttribute reviewAttribute(Long villageId, Long attributeId, HistoryReviewRequest request) {
         VillageAttribute attribute = villageAttributeRepository.findById(attributeId)
                 .orElseThrow(() -> new InvalidHistoryReviewException(
@@ -82,8 +88,24 @@ public class VillageAttributeService {
                 .orElseThrow(() -> new IllegalStateException(
                         "Authenticated user not found: " + username));
 
-        attribute.review(request.status().name(), reviewer);
+        String oldStatus = attribute.getStatus();
 
-        return villageAttributeRepository.save(attribute);
+        attribute.review(
+                request.status().name(),
+                reviewer,
+                request.reviewNotes()
+        );
+
+        VillageAttribute saved = villageAttributeRepository.save(attribute);
+
+        auditLogService.record(
+                "REVIEW",
+                "VILLAGE_ATTRIBUTE",
+                saved.getId(),
+                oldStatus,
+                saved.getStatus()
+        );
+
+        return saved;
     }
 }

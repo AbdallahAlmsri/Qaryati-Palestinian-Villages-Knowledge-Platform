@@ -1,5 +1,6 @@
 package com.qaryati.qaryati.population;
 
+import com.qaryati.qaryati.audit.AuditLogService;
 import com.qaryati.qaryati.user.User;
 import com.qaryati.qaryati.user.UserRepository;
 import com.qaryati.qaryati.village.Village;
@@ -31,6 +32,9 @@ class PopulationRecordServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private AuditLogService auditLogService;
 
     @InjectMocks
     private PopulationRecordService populationRecordService;
@@ -128,6 +132,15 @@ class PopulationRecordServiceTest {
 
         assertEquals(PopulationStatus.VERIFIED, result.getStatus());
         assertEquals(reviewer, result.getReviewedBy());
+        assertEquals("looks correct", result.getReviewNotes());
+
+        verify(auditLogService).record(
+                eq("REVIEW"),
+                eq("POPULATION_RECORD"),
+                eq(result.getId()),
+                eq("PENDING"),
+                eq("VERIFIED")
+        );
 
         SecurityContextHolder.clearContext();
     }

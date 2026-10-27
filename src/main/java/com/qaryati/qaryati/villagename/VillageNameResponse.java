@@ -14,7 +14,10 @@ public record VillageNameResponse(
         String nameOrigin,
         String status,
         Long createdBy,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        Long reviewedBy,
+        LocalDateTime reviewedAt,
+        String reviewNotes
 ) {
     public static VillageNameResponse from(VillageName villageName) {
         return new VillageNameResponse(
@@ -31,7 +34,12 @@ public record VillageNameResponse(
                 villageName.getCreatedBy() != null
                         ? villageName.getCreatedBy().getId()
                         : null,
-                villageName.getCreatedAt()
+                villageName.getCreatedAt(),
+                villageName.getReviewedBy() != null
+                        ? villageName.getReviewedBy().getId()
+                        : null,
+                villageName.getReviewedAt(),
+                villageName.getReviewNotes()
         );
     }
 }
