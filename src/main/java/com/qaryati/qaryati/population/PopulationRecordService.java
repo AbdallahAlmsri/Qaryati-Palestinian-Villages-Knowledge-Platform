@@ -75,8 +75,7 @@ public class PopulationRecordService {
             ReviewDecisionRequest request) {
 
         PopulationRecord record = populationRecordRepository.findById(recordId)
-                .orElseThrow(() -> new InvalidReviewException(
-                        "Population record with id " + recordId + " does not exist"));
+                .orElseThrow(() -> new PopulationRecordNotFoundException(recordId));
 
         if (!Objects.equals(record.getVillage().getId(), villageId)) {
             throw new InvalidReviewException(

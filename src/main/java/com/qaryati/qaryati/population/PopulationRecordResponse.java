@@ -12,7 +12,10 @@ public record PopulationRecordResponse(
         String notes,
         String status,
         String createdByUsername,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        String reviewedByUsername,
+        LocalDateTime reviewedAt,
+        String reviewNotes
 ) {
     public static PopulationRecordResponse from(PopulationRecord record) {
         return new PopulationRecordResponse(
@@ -25,7 +28,11 @@ public record PopulationRecordResponse(
                 record.getNotes(),
                 record.getStatus().name(),
                 record.getCreatedBy().getUsername(),
-                record.getCreatedAt()
+                record.getCreatedAt(),
+                record.getReviewedBy() != null
+                        ? record.getReviewedBy().getUsername() : null,
+                record.getReviewedAt(),
+                record.getReviewNotes()
         );
     }
 }

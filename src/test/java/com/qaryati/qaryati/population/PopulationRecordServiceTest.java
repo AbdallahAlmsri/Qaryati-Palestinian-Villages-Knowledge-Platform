@@ -92,7 +92,7 @@ class PopulationRecordServiceTest {
 
         ReviewDecisionRequest request = new ReviewDecisionRequest(PopulationStatus.VERIFIED, "notes");
 
-        assertThrows(InvalidReviewException.class,
+        assertThrows(PopulationRecordNotFoundException.class,
                 () -> populationRecordService.reviewRecord(1L, 999L, request));
     }
 
