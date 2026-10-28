@@ -111,6 +111,6 @@ class EconomyAgricultureFacilitiesIntegrationTest extends AbstractIntegrationTes
         ApiResponse again = call(
                 "PATCH", reviewPath, verifier, approve);
         assertEquals(422, again.status());
-        assertTrue(again.body().contains("INVALID_HISTORY_REVIEW"));
+        assertTrue(again.body().contains("INVALID_REVIEW"));
     }
 }

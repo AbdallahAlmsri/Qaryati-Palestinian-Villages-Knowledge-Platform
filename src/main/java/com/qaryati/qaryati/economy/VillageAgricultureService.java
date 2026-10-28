@@ -1,6 +1,6 @@
 package com.qaryati.qaryati.economy;
 
-import com.qaryati.qaryati.history.InvalidHistoryReviewException;
+import com.qaryati.qaryati.common.InvalidReviewException;
 import com.qaryati.qaryati.user.User;
 import com.qaryati.qaryati.user.UserRepository;
 import com.qaryati.qaryati.village.Village;
@@ -53,21 +53,21 @@ public class VillageAgricultureService {
             Long villageId, Long agricultureId, String status) {
 
         VillageAgriculture agriculture = agricultureRepository.findById(agricultureId)
-                .orElseThrow(() -> new InvalidHistoryReviewException(
+                .orElseThrow(() -> new InvalidReviewException(
                         "Agriculture record not found: " + agricultureId));
 
         if (!agriculture.getVillage().getId().equals(villageId)) {
-            throw new InvalidHistoryReviewException(
+            throw new InvalidReviewException(
                     "Agriculture record does not belong to this village");
         }
 
         if (!"PENDING".equals(agriculture.getStatus())) {
-            throw new InvalidHistoryReviewException(
+            throw new InvalidReviewException(
                     "Only PENDING records can be reviewed");
         }
 
         if (!"VERIFIED".equals(status) && !"REJECTED".equals(status)) {
-            throw new InvalidHistoryReviewException(
+            throw new InvalidReviewException(
                     "Invalid agriculture review status");
         }
 

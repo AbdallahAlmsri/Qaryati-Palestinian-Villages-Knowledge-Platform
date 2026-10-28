@@ -1,6 +1,6 @@
 package com.qaryati.qaryati.economy;
 
-import com.qaryati.qaryati.history.InvalidHistoryReviewException;
+import com.qaryati.qaryati.common.InvalidReviewException;
 import com.qaryati.qaryati.user.User;
 import com.qaryati.qaryati.user.UserRepository;
 import com.qaryati.qaryati.village.Village;
@@ -63,21 +63,21 @@ public class VillageFacilityService {
             Long villageId, Long facilityId, String status) {
 
         VillageFacility facility = facilityRepository.findById(facilityId)
-                .orElseThrow(() -> new InvalidHistoryReviewException(
+                .orElseThrow(() -> new InvalidReviewException(
                         "Facility record not found: " + facilityId));
 
         if (!facility.getVillage().getId().equals(villageId)) {
-            throw new InvalidHistoryReviewException(
+            throw new InvalidReviewException(
                     "Facility record does not belong to this village");
         }
 
         if (!"PENDING".equals(facility.getStatus())) {
-            throw new InvalidHistoryReviewException(
+            throw new InvalidReviewException(
                     "Only PENDING records can be reviewed");
         }
 
         if (!"VERIFIED".equals(status) && !"REJECTED".equals(status)) {
-            throw new InvalidHistoryReviewException(
+            throw new InvalidReviewException(
                     "Invalid facility review status");
         }
 

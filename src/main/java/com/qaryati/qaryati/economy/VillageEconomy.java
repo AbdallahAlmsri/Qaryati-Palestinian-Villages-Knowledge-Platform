@@ -30,7 +30,7 @@ public class VillageEconomy {
     private String status;
 
     @ManyToOne
-    @JoinColumn(name = "created_by")
+    @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
 
     @Column(name = "created_at", nullable = false)
