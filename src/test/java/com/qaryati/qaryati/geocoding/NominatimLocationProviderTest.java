@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class NominatimLocationProviderTest {
 
     @Test
-    void geocode_waitsAtLeastOneSecondBetweenRequests() throws Exception {
+    void geocode_respectsConfiguredRateLimit() throws Exception {
         HttpServer server = HttpServer.create(
                 new InetSocketAddress("127.0.0.1", 0), 0);
 
@@ -39,7 +39,7 @@ class NominatimLocationProviderTest {
             String baseUrl = "http://127.0.0.1:" + server.getAddress().getPort();
 
             NominatimLocationProvider provider =
-                    new NominatimLocationProvider(baseUrl, "ps");
+                    new NominatimLocationProvider(baseUrl, "ps", 500, 500, 100);
 
             assertEquals(Optional.empty(), provider.geocode("village-one"));
             assertEquals(Optional.empty(), provider.geocode("village-two"));
@@ -47,11 +47,10 @@ class NominatimLocationProviderTest {
             assertEquals(2, requestTimes.size());
 
             long elapsed = requestTimes.get(1) - requestTimes.get(0);
-            System.out.println("Actual interval: " + TimeUnit.NANOSECONDS.toMillis(elapsed) + " ms");
 
             assertTrue(
-                    elapsed >= TimeUnit.MILLISECONDS.toNanos(950),
-                    "Nominatim requests must be spaced about one second apart"
+                    elapsed >= TimeUnit.MILLISECONDS.toNanos(90),
+                    "Requests must respect the configured rate limit"
             );
         } finally {
             server.stop(0);
@@ -65,7 +64,7 @@ class NominatimLocationProviderTest {
 
         server.createContext("/search", exchange -> {
             try {
-                Thread.sleep(7000);
+                Thread.sleep(600);
                 byte[] response = "[]".getBytes(StandardCharsets.UTF_8);
                 exchange.sendResponseHeaders(200, response.length);
                 try (var output = exchange.getResponseBody()) {
@@ -83,8 +82,9 @@ class NominatimLocationProviderTest {
 
         try {
             String baseUrl = "http://127.0.0.1:" + server.getAddress().getPort();
+
             NominatimLocationProvider provider =
-                    new NominatimLocationProvider(baseUrl, "ps");
+                    new NominatimLocationProvider(baseUrl, "ps", 200, 150, 0);
 
             long start = System.nanoTime();
 
@@ -96,10 +96,8 @@ class NominatimLocationProviderTest {
             long elapsed = TimeUnit.NANOSECONDS.toMillis(
                     System.nanoTime() - start);
 
-            System.out.println("Timeout elapsed: " + elapsed + " ms");
-
-            assertTrue(elapsed < 6500,
-                    "Slow provider must time out instead of hanging");
+            assertTrue(elapsed < 2000,
+                    "Slow provider must time out promptly");
         } finally {
             server.stop(0);
         }

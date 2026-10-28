@@ -48,7 +48,8 @@ class GeocodingServiceTest {
         when(villageName.getName()).thenReturn(name);
 
         when(villageNameRepository
-                .findFirstByVillageIdAndLanguageIgnoreCaseOrderByIdDesc(villageId, "ar"))
+                .findFirstByVillageIdAndLanguageIgnoreCaseAndStatusIgnoreCaseOrderByIdDesc(
+                        villageId, "ar", "VERIFIED"))
                 .thenReturn(Optional.of(villageName));
     }
 
@@ -61,15 +62,16 @@ class GeocodingServiceTest {
     }
 
     @Test
-    void checkCoordinates_throwsException_whenNoArabicName() {
+    void checkCoordinates_throws422Exception_whenNoVerifiedArabicName() {
         when(villageRepository.findById(1L))
                 .thenReturn(Optional.of(villageWith("32.1521", "35.2571")));
 
         when(villageNameRepository
-                .findFirstByVillageIdAndLanguageIgnoreCaseOrderByIdDesc(1L, "ar"))
+                .findFirstByVillageIdAndLanguageIgnoreCaseAndStatusIgnoreCaseOrderByIdDesc(
+                        1L, "ar", "VERIFIED"))
                 .thenReturn(Optional.empty());
 
-        assertThrows(GeocodingUnavailableException.class,
+        assertThrows(MissingVerifiedArabicNameException.class,
                 () -> geocodingService.checkCoordinates(1L));
 
         verifyNoInteractions(locationProvider);
@@ -80,9 +82,9 @@ class GeocodingServiceTest {
         when(villageRepository.findById(1L))
                 .thenReturn(Optional.of(villageWith("32.1521", "35.2571")));
 
-        mockArabicName(1L, "حوارة");
+        mockArabicName(1L, "Huwara");
 
-        when(locationProvider.geocode("حوارة"))
+        when(locationProvider.geocode("Huwara"))
                 .thenReturn(Optional.empty());
 
         assertThrows(GeocodingUnavailableException.class,
@@ -94,9 +96,9 @@ class GeocodingServiceTest {
         when(villageRepository.findById(1L))
                 .thenReturn(Optional.of(villageWith("32.1521", "35.2571")));
 
-        mockArabicName(1L, "حوارة");
+        mockArabicName(1L, "Huwara");
 
-        when(locationProvider.geocode("حوارة")).thenReturn(Optional.of(
+        when(locationProvider.geocode("Huwara")).thenReturn(Optional.of(
                 new GeocodeResult(
                         new BigDecimal("32.1521357"),
                         new BigDecimal("35.2571332"),
@@ -107,7 +109,7 @@ class GeocodingServiceTest {
         GeocodeCheckResponse result = geocodingService.checkCoordinates(1L);
 
         assertTrue(result.coordinatesMatch());
-        verify(locationProvider).geocode("حوارة");
+        verify(locationProvider).geocode("Huwara");
     }
 
     @Test
@@ -115,9 +117,9 @@ class GeocodingServiceTest {
         when(villageRepository.findById(1L))
                 .thenReturn(Optional.of(villageWith("32.2215", "35.2556")));
 
-        mockArabicName(1L, "حوارة");
+        mockArabicName(1L, "Huwara");
 
-        when(locationProvider.geocode("حوارة")).thenReturn(Optional.of(
+        when(locationProvider.geocode("Huwara")).thenReturn(Optional.of(
                 new GeocodeResult(
                         new BigDecimal("32.1521357"),
                         new BigDecimal("35.2571332"),
@@ -129,25 +131,5 @@ class GeocodingServiceTest {
 
         assertFalse(result.coordinatesMatch());
         assertEquals(new BigDecimal("32.1521357"), result.resolvedLatitude());
-    }
-    @Test
-    void checkCoordinates_throwsException_whenFakeProviderFails() {
-        when(villageRepository.findById(1L))
-                .thenReturn(Optional.of(villageWith("32.1521", "35.2571")));
-
-        mockArabicName(1L, "حوارة");
-
-        LocationProvider fakeProvider = query -> Optional.empty();
-
-        GeocodingService service = new GeocodingService(
-                villageRepository,
-                villageNameRepository,
-                fakeProvider
-        );
-
-        assertThrows(
-                GeocodingUnavailableException.class,
-                () -> service.checkCoordinates(1L)
-        );
     }
 }

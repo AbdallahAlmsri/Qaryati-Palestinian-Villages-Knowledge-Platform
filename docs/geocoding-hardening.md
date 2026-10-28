@@ -1,4 +1,4 @@
-﻿# Geocoding Hardening (T8)
+# Geocoding Hardening (T8)
 
 ## Overview
 

@@ -30,10 +30,10 @@ public class GeocodingService {
                 .orElseThrow(() -> new VillageNotFoundException(villageId));
 
         String arabicName = villageNameRepository
-                .findFirstByVillageIdAndLanguageIgnoreCaseOrderByIdDesc(villageId, "ar")
+                .findFirstByVillageIdAndLanguageIgnoreCaseAndStatusIgnoreCaseOrderByIdDesc(villageId, "ar", "VERIFIED")
                 .map(villageName -> villageName.getName())
                 .filter(name -> !name.isBlank())
-                .orElseThrow(() -> new GeocodingUnavailableException(
+                .orElseThrow(() -> new MissingVerifiedArabicNameException(
                         "Village " + villageId + " has no Arabic name available for geocoding"
                 ));
 
