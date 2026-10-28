@@ -114,6 +114,13 @@ public class GlobalExceptionHandler {
                 .body(errorBody("FORBIDDEN", "You do not have permission to perform this action"));
     }
 
+
+    @ExceptionHandler(com.qaryati.qaryati.geocoding.MissingVerifiedArabicNameException.class)
+    public ResponseEntity<Map<String, Object>> handleMissingVerifiedArabicName(
+            com.qaryati.qaryati.geocoding.MissingVerifiedArabicNameException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(errorBody("MISSING_VERIFIED_ARABIC_NAME", ex.getMessage()));
+    }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleUnexpected(Exception ex) {
         // Spring's own web errors (404, 405, 415, missing parameter...) already carry a status code
