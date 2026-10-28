@@ -1,4 +1,4 @@
-﻿# Qaryati Architecture Diagram
+# Qaryati Architecture Diagram
 
 
 
@@ -8,37 +8,45 @@
 
 ```mermaid
 flowchart TD
-    Client\["Client / API Consumer"]
+    Client["Client / API Consumer"]
 
 
 
-    subgraph Backend\["Spring Boot Backend - Java 21"]
+    subgraph Backend["Spring Boot Backend - Java 21"]
 
-        Security\["Security Filters / JWT Authentication"]
+        Correlation["CorrelationIdFilter"]
+        RateLimit["AuthRateLimitFilter"]
+        JWT["JwtAuthFilter"]
 
-        Controllers\["REST Controllers"]
+        Controllers["REST Controllers"]
+        Errors["GlobalExceptionHandler"]
 
-        Services\["Business Services"]
+        Services["Business Services"]
 
-        Repositories\["Spring Data JPA Repositories"]
+        Repositories["Spring Data JPA Repositories"]
 
-        Provider\["Nominatim Location Provider"]
+        Cache["Spring Cache"]
+        Circuit["Resilience4j Circuit Breaker / Retry"]
+        Provider["Nominatim Location Provider"]
 
     end
 
 
 
-    Database\[("PostgreSQL Database")]
+    Database[("PostgreSQL Database")]
 
-    Flyway\["Flyway Database Migrations"]
+    Flyway["Flyway Database Migrations"]
 
-    Nominatim\["OpenStreetMap Nominatim API"]
+    Nominatim["OpenStreetMap Nominatim API"]
 
 
 
-    Client -->|HTTP Requests| Security
+    Client -->|HTTP Requests| Correlation
+    Correlation --> RateLimit
+    RateLimit --> JWT
 
-    Security --> Controllers
+    JWT --> Controllers
+    Controllers -.->|Exception Handling| Errors
 
     Controllers --> Services
 
@@ -48,7 +56,9 @@ flowchart TD
 
 
 
-    Services -->|Geocoding Requests| Provider
+    Services -->|Geocoding Requests| Cache
+    Cache --> Circuit
+    Circuit --> Provider
 
     Provider -->|HTTPS| Nominatim
 
@@ -142,5 +152,3 @@ The geocoding implementation includes HTTP timeouts and request rate limiting.
 - JWT protects authenticated API operations.
 
 - External geocoding is isolated behind a provider interface.
-
-

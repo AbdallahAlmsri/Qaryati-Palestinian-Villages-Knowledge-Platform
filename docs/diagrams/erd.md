@@ -1,6 +1,4 @@
-﻿# Qaryati Database ERD
-
-
+# Qaryati Database ERD
 
 ```mermaid
 erDiagram
@@ -16,8 +14,6 @@ erDiagram
     villages ||--o{ landmarks : has
 
     villages ||--o{ village_attributes : has
-
-
 
     users o|--o{ village_names : creates
 
@@ -39,8 +35,6 @@ erDiagram
 
     users o|--o{ village_attributes : reviews
 
-
-
     governorates {
 
         bigint id PK
@@ -50,8 +44,6 @@ erDiagram
         timestamptz created_at
 
     }
-
-
 
     villages {
 
@@ -74,8 +66,6 @@ erDiagram
         timestamptz updated_at
 
     }
-
-
 
     village_names {
 
@@ -109,8 +99,6 @@ erDiagram
 
     }
 
-
-
     users {
 
         bigint id PK
@@ -126,8 +114,6 @@ erDiagram
         timestamptz created_at
 
     }
-
-
 
     population_records {
 
@@ -157,8 +143,6 @@ erDiagram
 
     }
 
-
-
     historical_events {
 
         bigint id PK
@@ -184,8 +168,6 @@ erDiagram
         timestamptz reviewed_at
 
     }
-
-
 
     landmarks {
 
@@ -217,8 +199,6 @@ erDiagram
 
     }
 
-
-
     village_attributes {
 
         bigint id PK
@@ -243,12 +223,8 @@ erDiagram
 
     }
 
-
-
 ```
 ## Notes
-
-
 
 - Based on Flyway migrations V1 through V6.
 
@@ -263,7 +239,3 @@ erDiagram
 - created_by and reviewed_by reference users.id.
 
 - Optional user relationships reflect nullable foreign keys.
-
-
-
-
