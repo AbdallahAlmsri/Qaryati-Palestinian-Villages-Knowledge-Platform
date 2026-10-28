@@ -3,8 +3,6 @@ package com.qaryati.qaryati.user;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
 
 @Service
 public class UserRoleService {
@@ -18,14 +16,10 @@ public class UserRoleService {
     @Transactional
     public User updateRole(Long userId, Role newRole) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "User not found"
-                ));
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         if (newRole == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.UNPROCESSABLE_ENTITY, "Role cannot be null"
-            );
+            throw new InvalidUserRoleException("Role cannot be null");
         }
 
         String currentUsername = SecurityContextHolder
@@ -36,10 +30,7 @@ public class UserRoleService {
         if (user.getUsername().equals(currentUsername)
                 && user.getRole() == Role.ADMIN
                 && newRole != Role.ADMIN) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "An admin cannot remove their own admin role"
-            );
+            throw new UserRoleConflictException("An admin cannot remove their own admin role");
         }
 
         user.changeRole(newRole);

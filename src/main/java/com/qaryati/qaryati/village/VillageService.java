@@ -1,6 +1,7 @@
 package com.qaryati.qaryati.village;
 
 import com.qaryati.qaryati.common.InvalidQueryException;
+import com.qaryati.qaryati.population.PopulationRecordRepository;
 import com.qaryati.qaryati.governorate.Governorate;
 import com.qaryati.qaryati.governorate.GovernorateRepository;
 import com.qaryati.qaryati.villagename.VillageName;
@@ -25,11 +26,14 @@ public class VillageService {
 
     private final VillageRepository villageRepository;
     private final GovernorateRepository governorateRepository;
+    private final PopulationRecordRepository populationRecordRepository;
 
     public VillageService(VillageRepository villageRepository,
-                          GovernorateRepository governorateRepository) {
+                          GovernorateRepository governorateRepository,
+                          PopulationRecordRepository populationRecordRepository) {
         this.villageRepository = villageRepository;
         this.governorateRepository = governorateRepository;
+        this.populationRecordRepository = populationRecordRepository;
     }
 
     public Page<Village> search(Long governorateId, String q, int page, int size, String sort) {
@@ -124,6 +128,9 @@ public class VillageService {
         Village village = villageRepository.findById(villageId)
                 .orElseThrow(() -> new VillageNotFoundException(villageId));
 
+        if (populationRecordRepository.existsByVillageId(villageId)) {
+            throw new VillageDeleteConflictException("Cannot delete a village with population records");
+        }
         villageRepository.delete(village);
         villageRepository.flush();
     }
