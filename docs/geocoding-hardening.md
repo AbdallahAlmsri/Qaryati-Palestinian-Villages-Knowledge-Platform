@@ -1,32 +1,30 @@
-# Geocoding Hardening (T8)
+﻿# Geocoding Hardening (T8)
 
 ## Overview
 
-This task improves the reliability of Nominatim geocoding and validates village locations using their Arabic names.
+This task improves the reliability of Nominatim geocoding and validates village locations using verified Arabic names.
 
 ## Features
 
-- Configure a 3-second connection timeout.
-- Configure a 5-second read timeout.
-- Limit Nominatim requests to at most one request per second.
-- Use the latest Arabic name from village_names for geocoding.
-- Handle missing Arabic names and unavailable geocoding results.
+- Configure connection and read timeouts through app.geocoding.* properties (defaults: 3s and 5s).
+- Configure request rate limiting through app.geocoding.rate-limit-ms (default: 1000ms).
+- Use only the latest VERIFIED Arabic village name for geocoding.
+- Return HTTP 422 when a verified Arabic name is missing.
+- Return HTTP 503 when geocoding results are unavailable.
 - Preserve the existing coordinate comparison tolerance.
 
 ## Implementation
 
-- NominatimLocationProvider configures HTTP timeouts and request rate limiting.
-- GeocodingService retrieves the Arabic village name before checking coordinates.
-- VillageNameRepository provides the Arabic name lookup.
-- Circuit breaker fallback handles provider failures.
+- NominatimLocationProvider uses instance-level rate limiting and configurable HTTP timeouts.
+- GeocodingService retrieves a VERIFIED Arabic village name before checking coordinates.
+- VillageNameRepository provides the verified Arabic name lookup.
+- Resilience4j Retry and Circuit Breaker protect external requests.
+- Spring Cache caches geocoding results.
 
 ## Testing
 
-GeocodingServiceTest contains six unit tests, including a simulated provider failure.
-
-NominatimLocationProviderTest contains two tests covering request rate limiting and slow provider timeouts.
-
-The complete test suite passed with 66 tests, 0 failures, and 0 errors.
+- GeocodingServiceTest contains five unit tests covering missing villages, missing verified Arabic names, unavailable results, matching coordinates, and mismatching coordinates.
+- NominatimLocationProviderTest contains two tests covering request rate limiting and slow provider timeouts using a local HTTP server.
 
 Run all tests:
 
