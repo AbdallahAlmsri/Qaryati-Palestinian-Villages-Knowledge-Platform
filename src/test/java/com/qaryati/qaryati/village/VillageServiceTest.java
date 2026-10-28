@@ -2,6 +2,7 @@ package com.qaryati.qaryati.village;
 
 import com.qaryati.qaryati.governorate.Governorate;
 import com.qaryati.qaryati.governorate.GovernorateRepository;
+import com.qaryati.qaryati.population.PopulationRecordRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -28,6 +29,9 @@ class VillageServiceTest {
 
     @Mock
     private GovernorateRepository governorateRepository;
+
+    @Mock
+    private PopulationRecordRepository populationRecordRepository;
 
     @InjectMocks
     private VillageService villageService;
@@ -93,5 +97,40 @@ class VillageServiceTest {
         assertEquals(10, pageable.getPageSize());
         assertEquals(Sort.Direction.DESC, pageable.getSort().getOrderFor("elevationM").getDirection());
         assertNotNull(pageable.getSort().getOrderFor("id"));
+    }
+
+    @Test
+    void deleteVillage_rejectsVillageWithPopulationRecords() {
+        Village village = mock(Village.class);
+        when(villageRepository.findById(1L)).thenReturn(Optional.of(village));
+        when(populationRecordRepository.existsByVillageId(1L)).thenReturn(true);
+
+        assertThrows(VillageDeleteConflictException.class,
+                () -> villageService.deleteVillage(1L));
+
+        verify(villageRepository, never()).delete(any(Village.class));
+    }
+
+    @Test
+    void deleteVillage_deletesVillageWithoutPopulationRecords() {
+        Village village = mock(Village.class);
+        when(villageRepository.findById(1L)).thenReturn(Optional.of(village));
+
+        villageService.deleteVillage(1L);
+
+        verify(populationRecordRepository).existsByVillageId(1L);
+        verify(villageRepository).delete(village);
+        verify(villageRepository).flush();
+    }
+
+    @Test
+    void deleteVillage_rejectsUnknownVillage() {
+        when(villageRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(VillageNotFoundException.class,
+                () -> villageService.deleteVillage(999L));
+
+        verifyNoInteractions(populationRecordRepository);
+        verify(villageRepository, never()).delete(any(Village.class));
     }
 }

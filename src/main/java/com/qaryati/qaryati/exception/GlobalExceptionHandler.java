@@ -139,4 +139,32 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .body(errorBody("INVALID_HISTORY_REVIEW", ex.getMessage()));
     }
+
+    @ExceptionHandler(com.qaryati.qaryati.user.UserNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleUserNotFound(
+            com.qaryati.qaryati.user.UserNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(errorBody("USER_NOT_FOUND", ex.getMessage()));
+    }
+
+    @ExceptionHandler(com.qaryati.qaryati.user.UserRoleConflictException.class)
+    public ResponseEntity<Map<String, Object>> handleUserRoleConflict(
+            com.qaryati.qaryati.user.UserRoleConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(errorBody("USER_ROLE_CONFLICT", ex.getMessage()));
+    }
+
+    @ExceptionHandler(com.qaryati.qaryati.user.InvalidUserRoleException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidUserRole(
+            com.qaryati.qaryati.user.InvalidUserRoleException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(errorBody("INVALID_USER_ROLE", ex.getMessage()));
+    }
+
+    @ExceptionHandler(com.qaryati.qaryati.village.VillageDeleteConflictException.class)
+    public ResponseEntity<Map<String, Object>> handleVillageDeleteConflict(
+            com.qaryati.qaryati.village.VillageDeleteConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(errorBody("VILLAGE_DELETE_CONFLICT", ex.getMessage()));
+    }
 }
