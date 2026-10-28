@@ -77,16 +77,15 @@ public class VillageNameService {
             VillageNameReviewRequest request) {
 
         VillageName villageName = villageNameRepository.findById(nameId)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Village name with id " + nameId + " does not exist"));
+                .orElseThrow(() -> new VillageNameNotFoundException(nameId));
 
         if (!villageName.getVillage().getId().equals(villageId)) {
-            throw new IllegalArgumentException(
+            throw new com.qaryati.qaryati.population.InvalidReviewException(
                     "Village name does not belong to village " + villageId);
         }
 
         if (!"PENDING".equals(villageName.getStatus())) {
-            throw new IllegalStateException(
+            throw new com.qaryati.qaryati.population.InvalidReviewException(
                     "Only PENDING village names can be reviewed");
         }
 

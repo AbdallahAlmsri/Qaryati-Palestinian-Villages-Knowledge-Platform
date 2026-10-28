@@ -65,6 +65,13 @@ public class GlobalExceptionHandler {
                 .body(errorBody("POPULATION_RECORD_NOT_FOUND", ex.getMessage()));
     }
 
+    @ExceptionHandler(com.qaryati.qaryati.villagename.VillageNameNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleVillageNameNotFound(
+            com.qaryati.qaryati.villagename.VillageNameNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(errorBody("VILLAGE_NAME_NOT_FOUND", ex.getMessage()));
+    }
+
     @ExceptionHandler(InvalidReviewException.class)
     public ResponseEntity<Map<String, Object>> handleInvalidReview(InvalidReviewException ex) {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)

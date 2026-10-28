@@ -1,6 +1,7 @@
 package com.qaryati.qaryati.villagename;
 
 import java.time.LocalDateTime;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 public record VillageNameResponse(
         Long id,
@@ -20,6 +21,8 @@ public record VillageNameResponse(
         String reviewNotes
 ) {
     public static VillageNameResponse from(VillageName villageName) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean canViewReview = auth != null && auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_VERIFIER") || a.getAuthority().equals("ROLE_ADMIN"));
         return new VillageNameResponse(
                 villageName.getId(),
                 villageName.getVillage().getId(),
@@ -35,11 +38,11 @@ public record VillageNameResponse(
                         ? villageName.getCreatedBy().getId()
                         : null,
                 villageName.getCreatedAt(),
-                villageName.getReviewedBy() != null
+                canViewReview && villageName.getReviewedBy() != null
                         ? villageName.getReviewedBy().getId()
                         : null,
                 villageName.getReviewedAt(),
-                villageName.getReviewNotes()
+                canViewReview ? villageName.getReviewNotes() : null
         );
     }
 }

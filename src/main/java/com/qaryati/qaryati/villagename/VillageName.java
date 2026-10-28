@@ -37,8 +37,9 @@ public class VillageName {
     @Column(name = "name_origin", columnDefinition = "TEXT")
     private String nameOrigin;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status;
+    private VillageNameStatus status;
 
     @ManyToOne
     @JoinColumn(name = "created_by")
@@ -71,7 +72,7 @@ public class VillageName {
         this.validTo = validTo;
         this.source = source;
         this.nameOrigin = nameOrigin;
-        this.status = "PENDING";
+        this.status = VillageNameStatus.PENDING;
         this.createdBy = createdBy;
         this.createdAt = LocalDateTime.now();
     }
@@ -85,7 +86,7 @@ public class VillageName {
     public Integer getValidTo() { return validTo; }
     public String getSource() { return source; }
     public String getNameOrigin() { return nameOrigin; }
-    public String getStatus() { return status; }
+    public String getStatus() { return status.name(); }
     public User getCreatedBy() { return createdBy; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public User getReviewedBy() { return reviewedBy; }
@@ -97,11 +98,11 @@ public class VillageName {
             throw new IllegalArgumentException("Invalid review status");
         }
 
-        if (!"PENDING".equals(this.status)) {
+        if (this.status != VillageNameStatus.PENDING) {
             throw new IllegalStateException("Only PENDING village names can be reviewed");
         }
 
-        this.status = newStatus;
+        this.status = VillageNameStatus.valueOf(newStatus);
         this.reviewedBy = reviewer;
         this.reviewedAt = LocalDateTime.now();
         this.reviewNotes = reviewNotes;
