@@ -15,25 +15,25 @@ erDiagram
 
     villages ||--o{ village_attributes : has
 
-    users o|--o{ village_names : creates
+    users |o--o{ village_names : creates
 
-    users o|--o{ village_names : reviews
+    users |o--o{ village_names : reviews
 
     users ||--o{ population_records : creates
 
-    users o|--o{ population_records : reviews
+    users |o--o{ population_records : reviews
 
-    users o|--o{ historical_events : creates
+    users |o--o{ historical_events : creates
 
-    users o|--o{ historical_events : reviews
+    users |o--o{ historical_events : reviews
 
-    users o|--o{ landmarks : creates
+    users |o--o{ landmarks : creates
 
-    users o|--o{ landmarks : reviews
+    users |o--o{ landmarks : reviews
 
-    users o|--o{ village_attributes : creates
+    users |o--o{ village_attributes : creates
 
-    users o|--o{ village_attributes : reviews
+    users |o--o{ village_attributes : reviews
 
     governorates {
 

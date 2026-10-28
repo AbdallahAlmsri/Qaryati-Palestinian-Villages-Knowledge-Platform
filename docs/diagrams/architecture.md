@@ -1,16 +1,10 @@
 # Qaryati Architecture Diagram
 
-
-
 ## System Architecture
-
-
 
 ```mermaid
 flowchart TD
     Client["Client / API Consumer"]
-
-
 
     subgraph Backend["Spring Boot Backend - Java 21"]
 
@@ -31,15 +25,11 @@ flowchart TD
 
     end
 
-
-
     Database[("PostgreSQL Database")]
 
     Flyway["Flyway Database Migrations"]
 
     Nominatim["OpenStreetMap Nominatim API"]
-
-
 
     Client -->|HTTP Requests| Correlation
     Correlation --> RateLimit
@@ -54,30 +44,20 @@ flowchart TD
 
     Repositories --> Database
 
-
-
     Services -->|Geocoding Requests| Cache
     Cache --> Circuit
     Circuit --> Provider
 
     Provider -->|HTTPS| Nominatim
 
-
-
     Flyway -->|Schema Migrations| Database
-
-
 
 ```
 ## Main Components
 
-
-
 ### REST Controllers
 
 Handle incoming HTTP requests and return API responses.
-
-
 
 - AuthController
 
@@ -95,49 +75,31 @@ Handle incoming HTTP requests and return API responses.
 
 - GeocodingController
 
-
-
 ### Service Layer
 
 Contains business logic, validation, and coordination between components.
-
-
 
 ### Repository Layer
 
 Uses Spring Data JPA to access PostgreSQL entities.
 
-
-
 ### Security
 
 Uses Spring Security and JWT authentication, including request filters and role-based authorization.
-
-
 
 ### Database
 
 PostgreSQL stores users, governorates, villages, village names, population records, historical events, landmarks, and village attributes.
 
-
-
 Flyway manages database schema migrations.
-
-
 
 ### External Geocoding
 
 Nominatim provides location lookup through the LocationProvider interface.
 
-
-
 The geocoding implementation includes HTTP timeouts and request rate limiting.
 
-
-
 ## Architecture Notes
-
-
 
 - The application follows a layered architecture.
 
