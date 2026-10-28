@@ -58,8 +58,8 @@ public class GlobalExceptionHandler {
                 .body(errorBody("DUPLICATE_OR_INVALID_DATA", "This record conflicts with an existing one (e.g., duplicate village/year/source) or violates a data constraint"));
     }
 
-    @ExceptionHandler(InvalidReviewException.class)
-    public ResponseEntity<Map<String, Object>> handleInvalidReview(InvalidReviewException ex) {
+    @ExceptionHandler({InvalidReviewException.class, com.qaryati.qaryati.common.InvalidReviewException.class})
+    public ResponseEntity<Map<String, Object>> handleInvalidReview(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .body(errorBody("INVALID_REVIEW", ex.getMessage()));
     }
