@@ -1,4 +1,4 @@
-package com.qaryati.qaryati.village;
+package com.qaryati.qaryati.governorate;
 
 public class GovernorateNotFoundException extends RuntimeException {
     public GovernorateNotFoundException(Long governorateId) {

@@ -1,6 +1,7 @@
 package com.qaryati.qaryati.village;
 
 import com.qaryati.qaryati.governorate.Governorate;
+import com.qaryati.qaryati.governorate.GovernorateNotFoundException;
 import com.qaryati.qaryati.governorate.GovernorateRepository;
 import com.qaryati.qaryati.governorate.InvalidMunicipalityException;
 import com.qaryati.qaryati.governorate.Municipality;
@@ -35,6 +36,8 @@ class VillageServiceTest {
 
     @Mock
     private MunicipalityRepository municipalityRepository;
+
+    @Mock
     private PopulationRecordRepository populationRecordRepository;
 
     @InjectMocks
@@ -154,6 +157,9 @@ class VillageServiceTest {
         assertThrows(InvalidQueryException.class, () -> villageService.findNearby(1L, 0, 20));
         assertThrows(InvalidQueryException.class, () -> villageService.findNearby(1L, -5, 20));
         assertThrows(InvalidQueryException.class, () -> villageService.findNearby(1L, 101, 20));
+        assertThrows(InvalidQueryException.class, () -> villageService.findNearby(1L, Double.NaN, 20));
+        assertThrows(InvalidQueryException.class,
+                () -> villageService.findNearby(1L, Double.POSITIVE_INFINITY, 20));
         verifyNoInteractions(villageRepository);
     }
 

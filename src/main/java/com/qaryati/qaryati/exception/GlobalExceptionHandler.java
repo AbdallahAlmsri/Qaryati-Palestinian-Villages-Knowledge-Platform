@@ -1,6 +1,6 @@
 package com.qaryati.qaryati.exception;
 
-import com.qaryati.qaryati.village.GovernorateNotFoundException;
+import com.qaryati.qaryati.governorate.GovernorateNotFoundException;
 import com.qaryati.qaryati.village.VillageNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

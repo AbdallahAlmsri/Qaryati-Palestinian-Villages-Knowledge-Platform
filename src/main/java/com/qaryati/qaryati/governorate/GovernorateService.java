@@ -1,6 +1,5 @@
 package com.qaryati.qaryati.governorate;
 
-import com.qaryati.qaryati.village.GovernorateNotFoundException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 

@@ -101,6 +101,10 @@ class GeographyIntegrationTest extends AbstractIntegrationTest {
         assertEquals(422, badRadius.status());
         assertTrue(badRadius.body().contains("INVALID_QUERY"));
 
+        ApiResponse notANumber = call("GET", "/api/v1/villages/1/nearby?radiusKm=NaN", null, null);
+        assertEquals(422, notANumber.status());
+        assertTrue(notANumber.body().contains("INVALID_QUERY"));
+
         ApiResponse unknown = call("GET", "/api/v1/villages/999999/nearby", null, null);
         assertEquals(422, unknown.status());
         assertTrue(unknown.body().contains("VILLAGE_NOT_FOUND"));

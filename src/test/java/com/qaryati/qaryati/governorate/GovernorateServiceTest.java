@@ -1,6 +1,5 @@
 package com.qaryati.qaryati.governorate;
 
-import com.qaryati.qaryati.village.GovernorateNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

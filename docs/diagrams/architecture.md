@@ -63,6 +63,8 @@ Handle incoming HTTP requests and return API responses.
 
 - VillageController
 
+- GovernorateController
+
 - VillageNameController
 
 - PopulationRecordController
@@ -89,7 +91,7 @@ Uses Spring Security and JWT authentication, including request filters and role-
 
 ### Database
 
-PostgreSQL stores users, governorates, villages, village names, population records, historical events, landmarks, and village attributes.
+PostgreSQL stores users, governorates, municipalities, villages, village names, population records, historical events, landmarks, and village attributes.
 
 Flyway manages database schema migrations.
 

@@ -3,6 +3,7 @@ package com.qaryati.qaryati.village;
 import com.qaryati.qaryati.common.InvalidQueryException;
 import com.qaryati.qaryati.population.PopulationRecordRepository;
 import com.qaryati.qaryati.governorate.Governorate;
+import com.qaryati.qaryati.governorate.GovernorateNotFoundException;
 import com.qaryati.qaryati.governorate.GovernorateRepository;
 import com.qaryati.qaryati.governorate.InvalidMunicipalityException;
 import com.qaryati.qaryati.governorate.Municipality;
@@ -122,7 +123,8 @@ public class VillageService {
     }
 
     public List<NearbyVillageRow> findNearby(Long villageId, double radiusKm, int limit) {
-        if (radiusKm <= 0 || radiusKm > MAX_RADIUS_KM) {
+        // NaN fails every comparison, so it would slip past the range check on its own
+        if (Double.isNaN(radiusKm) || radiusKm <= 0 || radiusKm > MAX_RADIUS_KM) {
             throw new InvalidQueryException("radiusKm must be greater than 0 and at most " + (int) MAX_RADIUS_KM);
         }
 
