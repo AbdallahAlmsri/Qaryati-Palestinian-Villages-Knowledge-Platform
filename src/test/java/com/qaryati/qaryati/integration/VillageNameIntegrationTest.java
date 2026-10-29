@@ -105,4 +105,43 @@ class VillageNameIntegrationTest extends AbstractIntegrationTest {
         assertTrue(searchResponse.body().contains("\"totalItems\":1"));
         assertTrue(searchResponse.body().contains("\"id\":" + villageId));
     }
+    @Test
+    void reviewName_enforcesPermissionsAndProtectsReviewNotes() throws Exception {
+        String contributor = registerUser(uniqueName("nameContributor"));
+        String verifier = registerVerifier(uniqueName("nameVerifier"));
+
+        String nameJson = "{\"name\":\"Review Test Name\",\"nameType\":\"ALTERNATIVE\"}";
+        ApiResponse created = call(
+                "POST", "/api/v1/villages/1/names", contributor, nameJson
+        );
+        assertEquals(201, created.status());
+
+        long nameId = extractLong(created.body(), "id");
+        String base = "/api/v1/villages/1/names";
+        String reviewPath = base + "/" + nameId + "/review";
+        String reviewJson = "{\"status\":\"VERIFIED\",\"reviewNotes\":\"Private verification notes\"}";
+
+        assertEquals(403, call("PATCH", reviewPath, contributor, reviewJson).status());
+
+        ApiResponse reviewed = call("PATCH", reviewPath, verifier, reviewJson);
+        assertEquals(200, reviewed.status());
+        assertTrue(reviewed.body().contains("\"status\":\"VERIFIED\""));
+        assertTrue(reviewed.body().contains("Private verification notes"));
+
+        ApiResponse again = call("PATCH", reviewPath, verifier, reviewJson);
+        assertEquals(422, again.status());
+        assertTrue(again.body().contains("INVALID_REVIEW"));
+
+        ApiResponse publicResponse = call("GET", base, null, null);
+        assertEquals(200, publicResponse.status());
+        assertFalse(publicResponse.body().contains("Private verification notes"));
+
+        ApiResponse contributorResponse = call("GET", base, contributor, null);
+        assertEquals(200, contributorResponse.status());
+        assertFalse(contributorResponse.body().contains("Private verification notes"));
+
+        ApiResponse verifierResponse = call("GET", base, verifier, null);
+        assertEquals(200, verifierResponse.status());
+        assertTrue(verifierResponse.body().contains("Private verification notes"));
+    }
 }

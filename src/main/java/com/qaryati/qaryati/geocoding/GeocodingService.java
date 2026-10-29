@@ -3,6 +3,7 @@ package com.qaryati.qaryati.geocoding;
 import com.qaryati.qaryati.village.Village;
 import com.qaryati.qaryati.village.VillageRepository;
 import com.qaryati.qaryati.village.VillageNotFoundException;
+import com.qaryati.qaryati.villagename.VillageNameRepository;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -13,10 +14,14 @@ public class GeocodingService {
     private static final BigDecimal TOLERANCE_DEGREES = new BigDecimal("0.01");
 
     private final VillageRepository villageRepository;
+    private final VillageNameRepository villageNameRepository;
     private final LocationProvider locationProvider;
 
-    public GeocodingService(VillageRepository villageRepository, LocationProvider locationProvider) {
+    public GeocodingService(VillageRepository villageRepository,
+                            VillageNameRepository villageNameRepository,
+                            LocationProvider locationProvider) {
         this.villageRepository = villageRepository;
+        this.villageNameRepository = villageNameRepository;
         this.locationProvider = locationProvider;
     }
 
@@ -24,13 +29,15 @@ public class GeocodingService {
         Village village = villageRepository.findById(villageId)
                 .orElseThrow(() -> new VillageNotFoundException(villageId));
 
-        if (village.getLocationDescription() == null || village.getLocationDescription().isBlank()) {
-            throw new GeocodingUnavailableException(
-                    "Village " + villageId + " has no location description to geocode against"
-            );
-        }
+        String arabicName = villageNameRepository
+                .findFirstByVillageIdAndLanguageIgnoreCaseAndStatusIgnoreCaseOrderByIdDesc(villageId, "ar", "VERIFIED")
+                .map(villageName -> villageName.getName())
+                .filter(name -> !name.isBlank())
+                .orElseThrow(() -> new MissingVerifiedArabicNameException(
+                        "Village " + villageId + " has no Arabic name available for geocoding"
+                ));
 
-        GeocodeResult result = locationProvider.geocode(village.getLocationDescription())
+        GeocodeResult result = locationProvider.geocode(arabicName)
                 .orElseThrow(() -> new GeocodingUnavailableException(
                         "Could not resolve coordinates for village " + villageId + " from external provider"
                 ));

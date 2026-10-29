@@ -10,6 +10,7 @@ import java.util.Optional;
 public interface PopulationRecordRepository extends JpaRepository<PopulationRecord, Long> {
 
     List<PopulationRecord> findByVillageIdOrderByYearAsc(Long villageId);
+    boolean existsByVillageId(Long villageId);
 
     @Query(value = """
             SELECT
