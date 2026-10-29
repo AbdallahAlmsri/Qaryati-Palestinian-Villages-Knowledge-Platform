@@ -82,9 +82,11 @@ WHERE n % 3 = 0;
 
 COMMIT;
 
--- Fresh statistics, so the query planner sees the real table sizes
-ANALYZE villages;
-ANALYZE village_names;
+-- Clean up the rows deleted above and refresh the statistics. Without the VACUUM, the dead rows left
+-- by re-seeding make the planner skip the search index (V11), which a real database's autovacuum would
+-- have cleaned up. VACUUM cannot run inside BEGIN/COMMIT, so it stays down here.
+VACUUM ANALYZE villages;
+VACUUM ANALYZE village_names;
 
 SELECT count(*) AS seeded_villages FROM villages WHERE location_description LIKE '%(load test data)';
 SELECT count(*) AS seeded_names
