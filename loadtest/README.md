@@ -77,3 +77,13 @@ register and login are tagged `setup` and are not part of the write numbers.
 
 Created villages end with `(load test data)`, so the cleanup script, or simply running the seed again,
 removes them. Run the seed again before a measurement so every run starts from the same data.
+
+## 3. Results
+
+The baseline, the bottleneck found with `EXPLAIN ANALYZE`, the index added in
+`V11__add_search_trigram_indexes.sql` and the before/after numbers are in
+[docs/performance-report.md](../docs/performance-report.md).
+
+To repeat the measurement, seed 20,000 villages, then run the read test with `-e VUS=50` and the write test
+with `-e VUS=10`. The seed ends with `VACUUM ANALYZE`, so the planner sees clean tables and uses the index,
+as it would on a database that autovacuum keeps tidy.
