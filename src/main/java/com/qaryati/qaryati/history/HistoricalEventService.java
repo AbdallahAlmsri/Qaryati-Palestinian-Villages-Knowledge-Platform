@@ -1,5 +1,6 @@
 package com.qaryati.qaryati.history;
 
+import com.qaryati.qaryati.audit.AuditLogService;
 import com.qaryati.qaryati.user.User;
 import com.qaryati.qaryati.user.UserRepository;
 import com.qaryati.qaryati.village.Village;
@@ -7,6 +8,7 @@ import com.qaryati.qaryati.village.VillageNotFoundException;
 import com.qaryati.qaryati.village.VillageRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -16,13 +18,16 @@ public class HistoricalEventService {
     private final HistoricalEventRepository historicalEventRepository;
     private final VillageRepository villageRepository;
     private final UserRepository userRepository;
+    private final AuditLogService auditLogService;
 
     public HistoricalEventService(HistoricalEventRepository historicalEventRepository,
                                   VillageRepository villageRepository,
-                                  UserRepository userRepository) {
+                                  UserRepository userRepository,
+                                  AuditLogService auditLogService) {
         this.historicalEventRepository = historicalEventRepository;
         this.villageRepository = villageRepository;
         this.userRepository = userRepository;
+        this.auditLogService = auditLogService;
     }
 
     public List<HistoricalEvent> getEvents(Long villageId) {
@@ -55,6 +60,7 @@ public class HistoricalEventService {
         return historicalEventRepository.save(event);
     }
 
+    @Transactional
     public HistoricalEvent reviewEvent(Long villageId, Long eventId, HistoryReviewRequest request) {
         HistoricalEvent event = historicalEventRepository.findById(eventId)
                 .orElseThrow(() -> new InvalidHistoryReviewException(
@@ -82,8 +88,24 @@ public class HistoricalEventService {
                 .orElseThrow(() -> new IllegalStateException(
                         "Authenticated user not found: " + username));
 
-        event.review(request.status().name(), reviewer);
+        String oldStatus = event.getStatus();
 
-        return historicalEventRepository.save(event);
+        event.review(
+                request.status().name(),
+                reviewer,
+                request.reviewNotes()
+        );
+
+        HistoricalEvent saved = historicalEventRepository.save(event);
+
+        auditLogService.record(
+                "REVIEW",
+                "HISTORICAL_EVENT",
+                saved.getId(),
+                oldStatus,
+                saved.getStatus()
+        );
+
+        return saved;
     }
 }

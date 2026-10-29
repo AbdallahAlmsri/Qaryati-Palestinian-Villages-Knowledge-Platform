@@ -1,6 +1,7 @@
 package com.qaryati.qaryati.village;
 
 import com.qaryati.qaryati.common.InvalidQueryException;
+import com.qaryati.qaryati.population.PopulationRecordRepository;
 import com.qaryati.qaryati.governorate.Governorate;
 import com.qaryati.qaryati.governorate.GovernorateRepository;
 import com.qaryati.qaryati.villagename.VillageName;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 import java.util.TreeSet;
@@ -24,11 +26,14 @@ public class VillageService {
 
     private final VillageRepository villageRepository;
     private final GovernorateRepository governorateRepository;
+    private final PopulationRecordRepository populationRecordRepository;
 
     public VillageService(VillageRepository villageRepository,
-                          GovernorateRepository governorateRepository) {
+                          GovernorateRepository governorateRepository,
+                          PopulationRecordRepository populationRecordRepository) {
         this.villageRepository = villageRepository;
         this.governorateRepository = governorateRepository;
+        this.populationRecordRepository = populationRecordRepository;
     }
 
     public Page<Village> search(Long governorateId, String q, int page, int size, String sort) {
@@ -97,6 +102,37 @@ public class VillageService {
         );
 
         return villageRepository.save(village);
+    }
+
+    @Transactional
+    public Village updateVillage(Long villageId, UpdateVillageRequest request) {
+        Village village = villageRepository.findById(villageId)
+                .orElseThrow(() -> new VillageNotFoundException(villageId));
+
+        Governorate governorate = governorateRepository.findById(request.governorateId())
+                .orElseThrow(() -> new GovernorateNotFoundException(request.governorateId()));
+
+        village.update(
+                governorate,
+                request.latitude(),
+                request.longitude(),
+                request.locationDescription(),
+                request.elevationM()
+        );
+
+        return villageRepository.save(village);
+    }
+
+    @Transactional
+    public void deleteVillage(Long villageId) {
+        Village village = villageRepository.findById(villageId)
+                .orElseThrow(() -> new VillageNotFoundException(villageId));
+
+        if (populationRecordRepository.existsByVillageId(villageId)) {
+            throw new VillageDeleteConflictException("Cannot delete a village with population records");
+        }
+        villageRepository.delete(village);
+        villageRepository.flush();
     }
 
     private Sort parseSort(String sort) {

@@ -44,6 +44,9 @@ public class VillageAttribute {
     @Column(name = "reviewed_at")
     private LocalDateTime reviewedAt;
 
+    @Column(name = "review_notes", columnDefinition = "TEXT")
+    private String reviewNotes;
+
     protected VillageAttribute() {
     }
 
@@ -68,13 +71,20 @@ public class VillageAttribute {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public User getReviewedBy() { return reviewedBy; }
     public LocalDateTime getReviewedAt() { return reviewedAt; }
+    public String getReviewNotes() { return reviewNotes; }
 
     public void review(String newStatus, User reviewer) {
+        review(newStatus, reviewer, null);
+    }
+
+    public void review(String newStatus, User reviewer, String reviewNotes) {
         if (!"VERIFIED".equals(newStatus) && !"REJECTED".equals(newStatus)) {
             throw new IllegalArgumentException("Invalid review status");
         }
+
         this.status = newStatus;
         this.reviewedBy = reviewer;
         this.reviewedAt = LocalDateTime.now();
+        this.reviewNotes = reviewNotes;
     }
 }

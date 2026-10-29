@@ -50,12 +50,15 @@ public class PopulationRecord {
     @Column(name = "reviewed_at")
     private LocalDateTime reviewedAt;
 
-    protected PopulationRecord() {
+    @Column(name = "review_notes", columnDefinition = "TEXT")
+    private String reviewNotes;
 
+    protected PopulationRecord() {
     }
 
-    public PopulationRecord(Village village, Integer year, Integer population, String source,
-                            String sourceUrl, String notes, User createdBy) {
+    public PopulationRecord(Village village, Integer year, Integer population,
+                            String source, String sourceUrl, String notes,
+                            User createdBy) {
         this.village = village;
         this.year = year;
         this.population = population;
@@ -79,10 +82,17 @@ public class PopulationRecord {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public User getReviewedBy() { return reviewedBy; }
     public LocalDateTime getReviewedAt() { return reviewedAt; }
+    public String getReviewNotes() { return reviewNotes; }
 
     public void review(PopulationStatus newStatus, User reviewer) {
+        review(newStatus, reviewer, null);
+    }
+
+    public void review(PopulationStatus newStatus, User reviewer,
+                       String reviewNotes) {
         this.status = newStatus;
         this.reviewedBy = reviewer;
         this.reviewedAt = LocalDateTime.now();
+        this.reviewNotes = reviewNotes;
     }
 }
