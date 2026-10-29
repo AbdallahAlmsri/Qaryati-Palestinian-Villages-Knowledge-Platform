@@ -180,6 +180,13 @@ public class VillageService {
         Governorate governorate = governorateRepository.findById(request.governorateId())
                 .orElseThrow(() -> new GovernorateNotFoundException(request.governorateId()));
 
+        // A PUT replaces the whole village, so leaving municipalityId out clears it. A municipality that is
+        // given must belong to the (possibly new) governorate, the same rule as createVillage. Checked
+        // before anything changes, so a rejected request leaves the village untouched.
+        Municipality municipality = request.municipalityId() == null
+                ? null
+                : findMunicipalityIn(governorate, request.municipalityId());
+
         village.update(
                 governorate,
                 request.latitude(),
@@ -187,6 +194,7 @@ public class VillageService {
                 request.locationDescription(),
                 request.elevationM()
         );
+        village.setMunicipality(municipality);
 
         return villageRepository.save(village);
     }

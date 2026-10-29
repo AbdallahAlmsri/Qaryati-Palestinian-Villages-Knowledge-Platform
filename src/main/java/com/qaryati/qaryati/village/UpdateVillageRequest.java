@@ -10,6 +10,7 @@ public record UpdateVillageRequest(
         @DecimalMin("-90.0") @DecimalMax("90.0") BigDecimal latitude,
         @DecimalMin("-180.0") @DecimalMax("180.0") BigDecimal longitude,
         String locationDescription,
-        Integer elevationM
+        Integer elevationM,
+        Long municipalityId
 ) {
 }

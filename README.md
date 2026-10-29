@@ -180,7 +180,7 @@ effect immediately, even for a token issued before it.
 | POST | `/auth/login` | Anyone | Returns a token |
 | GET | `/villages` | Anyone | A page of villages. Parameters: `page`, `size` (1–100), `sort` (e.g. `elevationM,desc`), `governorateId`, `q` (searches descriptions and names) |
 | POST | `/villages` | Logged in | Creates a village. `municipalityId` is optional and must be in the same governorate |
-| PUT | `/villages/{id}` | `ADMIN` | Updates a village's governorate, coordinates, description and elevation |
+| PUT | `/villages/{id}` | `ADMIN` | Replaces a village's governorate, coordinates, description, elevation and municipality. A `municipalityId` must be in the new governorate; leaving it out clears it |
 | DELETE | `/villages/{id}` | `ADMIN` | Deletes a village and its names and heritage records. Refused with `409 VILLAGE_DELETE_CONFLICT` if it has population records |
 | GET | `/villages/{id}/nearby` | Anyone | Villages within `radiusKm` (default 10, max 100), nearest first, with `distanceKm`. `limit` 1–100, default 20 |
 | GET | `/villages/{id}/population/stats?fromYear=&toYear=` | Anyone | Min, max, average and count of `VERIFIED` records |

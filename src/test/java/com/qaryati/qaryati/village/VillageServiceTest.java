@@ -239,6 +239,59 @@ class VillageServiceTest {
     }
 
     @Test
+    void updateVillage_linksMunicipalityInTheNewGovernorate() {
+        Governorate hebron = governorateWithId(2L);
+        Municipality hebronMunicipality = new Municipality(hebron, "Hebron");
+        Village village = new Village(governorateWithId(1L),
+                BigDecimal.valueOf(32.0), BigDecimal.valueOf(35.0), "Test", 500);
+        UpdateVillageRequest request = new UpdateVillageRequest(
+                2L, BigDecimal.valueOf(31.5), BigDecimal.valueOf(35.1), "Moved", 400, 7L);
+
+        when(villageRepository.findById(5L)).thenReturn(Optional.of(village));
+        when(governorateRepository.findById(2L)).thenReturn(Optional.of(hebron));
+        when(municipalityRepository.findById(7L)).thenReturn(Optional.of(hebronMunicipality));
+        when(villageRepository.save(any(Village.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        assertSame(hebronMunicipality, villageService.updateVillage(5L, request).getMunicipality());
+    }
+
+    @Test
+    void updateVillage_rejectsMunicipalityFromAnotherGovernorate() {
+        Governorate hebron = governorateWithId(2L);
+        Municipality nablusMunicipality = new Municipality(governorateWithId(1L), "Nablus");
+        Village village = new Village(governorateWithId(1L),
+                BigDecimal.valueOf(32.0), BigDecimal.valueOf(35.0), "Test", 500);
+        UpdateVillageRequest request = new UpdateVillageRequest(
+                2L, BigDecimal.valueOf(31.5), BigDecimal.valueOf(35.1), "Moved", 400, 7L);
+
+        when(villageRepository.findById(5L)).thenReturn(Optional.of(village));
+        when(governorateRepository.findById(2L)).thenReturn(Optional.of(hebron));
+        when(municipalityRepository.findById(7L)).thenReturn(Optional.of(nablusMunicipality));
+
+        assertThrows(InvalidMunicipalityException.class,
+                () -> villageService.updateVillage(5L, request));
+        verify(villageRepository, never()).save(any());
+        assertEquals("Test", village.getLocationDescription(), "a rejected update leaves the village unchanged");
+    }
+
+    @Test
+    void updateVillage_clearsMunicipalityWhenOmitted() {
+        Governorate nablus = governorateWithId(1L);
+        Village village = new Village(nablus,
+                BigDecimal.valueOf(32.0), BigDecimal.valueOf(35.0), "Test", 500);
+        village.setMunicipality(new Municipality(nablus, "Nablus"));
+        UpdateVillageRequest request = new UpdateVillageRequest(
+                1L, BigDecimal.valueOf(32.0), BigDecimal.valueOf(35.0), "Test", 500, null);
+
+        when(villageRepository.findById(5L)).thenReturn(Optional.of(village));
+        when(governorateRepository.findById(1L)).thenReturn(Optional.of(nablus));
+        when(villageRepository.save(any(Village.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        assertNull(villageService.updateVillage(5L, request).getMunicipality());
+        verifyNoInteractions(municipalityRepository);
+    }
+
+    @Test
     void deleteVillage_rejectsUnknownVillage() {
         when(villageRepository.findById(999L)).thenReturn(Optional.empty());
 

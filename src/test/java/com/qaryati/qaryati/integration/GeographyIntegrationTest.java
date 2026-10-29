@@ -68,6 +68,32 @@ class GeographyIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void updateVillage_toAnotherGovernorate_mustNotKeepTheOldMunicipality() throws Exception {
+        String username = uniqueName("geoadmin");
+        registerUser(username);
+        jdbcTemplate.update("UPDATE users SET role = 'ADMIN' WHERE username = ?", username);
+        String adminToken = login(username);
+        long nablusId = governorateId("Nablus");
+        long hebronId = governorateId("Hebron");
+        long nablusMunicipalityId = municipalityId("Nablus");
+
+        ApiResponse created = call("POST", "/api/v1/villages", adminToken,
+                villageJson(nablusId, 32.30, 35.20, "Village to move", nablusMunicipalityId));
+        assertEquals(201, created.status(), created.body());
+        long villageId = extractLong(created.body(), "id");
+
+        ApiResponse keptOldMunicipality = call("PUT", "/api/v1/villages/" + villageId, adminToken,
+                villageJson(hebronId, 31.53, 35.10, "Moved to Hebron", nablusMunicipalityId));
+        assertEquals(422, keptOldMunicipality.status());
+        assertTrue(keptOldMunicipality.body().contains("INVALID_MUNICIPALITY"));
+
+        ApiResponse withoutMunicipality = call("PUT", "/api/v1/villages/" + villageId, adminToken,
+                villageJson(hebronId, 31.53, 35.10, "Moved to Hebron", null));
+        assertEquals(200, withoutMunicipality.status(), withoutMunicipality.body());
+        assertTrue(withoutMunicipality.body().contains("\"municipalityName\":null"), withoutMunicipality.body());
+    }
+
+    @Test
     void nearby_returnsVillagesInsideTheRadius_sortedByDistance() throws Exception {
         String token = registerUser(uniqueName("geo"));
         long gazaId = governorateId("Gaza");
