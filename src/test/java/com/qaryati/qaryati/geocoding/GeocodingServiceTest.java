@@ -1,9 +1,11 @@
 package com.qaryati.qaryati.geocoding;
 
 import com.qaryati.qaryati.governorate.Governorate;
-import com.qaryati.qaryati.village.VillageNotFoundException;
 import com.qaryati.qaryati.village.Village;
+import com.qaryati.qaryati.village.VillageNotFoundException;
 import com.qaryati.qaryati.village.VillageRepository;
+import com.qaryati.qaryati.villagename.VillageName;
+import com.qaryati.qaryati.villagename.VillageNameRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -14,7 +16,7 @@ import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class GeocodingServiceTest {
@@ -23,19 +25,32 @@ class GeocodingServiceTest {
     private VillageRepository villageRepository;
 
     @Mock
+    private VillageNameRepository villageNameRepository;
+
+    @Mock
     private LocationProvider locationProvider;
 
     @InjectMocks
     private GeocodingService geocodingService;
 
-    private Village villageWith(String description, String lat, String lon) {
+    private Village villageWith(String lat, String lon) {
         return new Village(
                 new Governorate("Nablus"),
                 new BigDecimal(lat),
                 new BigDecimal(lon),
-                description,
+                "A village in Nablus",
                 500
         );
+    }
+
+    private void mockArabicName(Long villageId, String name) {
+        VillageName villageName = mock(VillageName.class);
+        when(villageName.getName()).thenReturn(name);
+
+        when(villageNameRepository
+                .findFirstByVillageIdAndLanguageIgnoreCaseAndStatusIgnoreCaseOrderByIdDesc(
+                        villageId, "ar", "VERIFIED"))
+                .thenReturn(Optional.of(villageName));
     }
 
     @Test
@@ -47,19 +62,30 @@ class GeocodingServiceTest {
     }
 
     @Test
-    void checkCoordinates_throwsException_whenNoLocationDescription() {
-        Village village = villageWith("  ", "32.1521", "35.2571");
-        when(villageRepository.findById(1L)).thenReturn(Optional.of(village));
+    void checkCoordinates_throws422Exception_whenNoVerifiedArabicName() {
+        when(villageRepository.findById(1L))
+                .thenReturn(Optional.of(villageWith("32.1521", "35.2571")));
 
-        assertThrows(GeocodingUnavailableException.class,
+        when(villageNameRepository
+                .findFirstByVillageIdAndLanguageIgnoreCaseAndStatusIgnoreCaseOrderByIdDesc(
+                        1L, "ar", "VERIFIED"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(MissingVerifiedArabicNameException.class,
                 () -> geocodingService.checkCoordinates(1L));
+
+        verifyNoInteractions(locationProvider);
     }
 
     @Test
     void checkCoordinates_throwsException_whenProviderReturnsNothing() {
-        Village village = villageWith("Huwara", "32.1521", "35.2571");
-        when(villageRepository.findById(1L)).thenReturn(Optional.of(village));
-        when(locationProvider.geocode("Huwara")).thenReturn(Optional.empty());
+        when(villageRepository.findById(1L))
+                .thenReturn(Optional.of(villageWith("32.1521", "35.2571")));
+
+        mockArabicName(1L, "Huwara");
+
+        when(locationProvider.geocode("Huwara"))
+                .thenReturn(Optional.empty());
 
         assertThrows(GeocodingUnavailableException.class,
                 () -> geocodingService.checkCoordinates(1L));
@@ -67,22 +93,39 @@ class GeocodingServiceTest {
 
     @Test
     void checkCoordinates_reportsMatch_whenWithinTolerance() {
-        Village village = villageWith("Huwara", "32.1521", "35.2571");
-        when(villageRepository.findById(1L)).thenReturn(Optional.of(village));
+        when(villageRepository.findById(1L))
+                .thenReturn(Optional.of(villageWith("32.1521", "35.2571")));
+
+        mockArabicName(1L, "Huwara");
+
         when(locationProvider.geocode("Huwara")).thenReturn(Optional.of(
-                new GeocodeResult(new BigDecimal("32.1521357"), new BigDecimal("35.2571332"), "Huwara")));
+                new GeocodeResult(
+                        new BigDecimal("32.1521357"),
+                        new BigDecimal("35.2571332"),
+                        "Huwara"
+                )
+        ));
 
         GeocodeCheckResponse result = geocodingService.checkCoordinates(1L);
 
         assertTrue(result.coordinatesMatch());
+        verify(locationProvider).geocode("Huwara");
     }
 
     @Test
     void checkCoordinates_reportsMismatch_whenOutsideTolerance() {
-        Village village = villageWith("Huwara", "32.2215", "35.2556");
-        when(villageRepository.findById(1L)).thenReturn(Optional.of(village));
+        when(villageRepository.findById(1L))
+                .thenReturn(Optional.of(villageWith("32.2215", "35.2556")));
+
+        mockArabicName(1L, "Huwara");
+
         when(locationProvider.geocode("Huwara")).thenReturn(Optional.of(
-                new GeocodeResult(new BigDecimal("32.1521357"), new BigDecimal("35.2571332"), "Huwara")));
+                new GeocodeResult(
+                        new BigDecimal("32.1521357"),
+                        new BigDecimal("35.2571332"),
+                        "Huwara"
+                )
+        ));
 
         GeocodeCheckResponse result = geocodingService.checkCoordinates(1L);
 

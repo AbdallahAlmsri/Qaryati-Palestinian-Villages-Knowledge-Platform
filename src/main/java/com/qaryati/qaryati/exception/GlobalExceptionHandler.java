@@ -72,8 +72,8 @@ public class GlobalExceptionHandler {
                 .body(errorBody("VILLAGE_NAME_NOT_FOUND", ex.getMessage()));
     }
 
-    @ExceptionHandler(InvalidReviewException.class)
-    public ResponseEntity<Map<String, Object>> handleInvalidReview(InvalidReviewException ex) {
+   @ExceptionHandler({InvalidReviewException.class, com.qaryati.qaryati.common.InvalidReviewException.class})
+   public ResponseEntity<Map<String, Object>> handleInvalidReview(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .body(errorBody("INVALID_REVIEW", ex.getMessage()));
     }
@@ -128,6 +128,13 @@ public class GlobalExceptionHandler {
                 .body(errorBody("FORBIDDEN", "You do not have permission to perform this action"));
     }
 
+
+    @ExceptionHandler(com.qaryati.qaryati.geocoding.MissingVerifiedArabicNameException.class)
+    public ResponseEntity<Map<String, Object>> handleMissingVerifiedArabicName(
+            com.qaryati.qaryati.geocoding.MissingVerifiedArabicNameException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(errorBody("MISSING_VERIFIED_ARABIC_NAME", ex.getMessage()));
+    }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleUnexpected(Exception ex) {
         // Spring's own web errors (404, 405, 415, missing parameter...) already carry a status code
@@ -145,5 +152,33 @@ public class GlobalExceptionHandler {
             com.qaryati.qaryati.history.InvalidHistoryReviewException ex) {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .body(errorBody("INVALID_HISTORY_REVIEW", ex.getMessage()));
+    }
+
+    @ExceptionHandler(com.qaryati.qaryati.user.UserNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleUserNotFound(
+            com.qaryati.qaryati.user.UserNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(errorBody("USER_NOT_FOUND", ex.getMessage()));
+    }
+
+    @ExceptionHandler(com.qaryati.qaryati.user.UserRoleConflictException.class)
+    public ResponseEntity<Map<String, Object>> handleUserRoleConflict(
+            com.qaryati.qaryati.user.UserRoleConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(errorBody("USER_ROLE_CONFLICT", ex.getMessage()));
+    }
+
+    @ExceptionHandler(com.qaryati.qaryati.user.InvalidUserRoleException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidUserRole(
+            com.qaryati.qaryati.user.InvalidUserRoleException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(errorBody("INVALID_USER_ROLE", ex.getMessage()));
+    }
+
+    @ExceptionHandler(com.qaryati.qaryati.village.VillageDeleteConflictException.class)
+    public ResponseEntity<Map<String, Object>> handleVillageDeleteConflict(
+            com.qaryati.qaryati.village.VillageDeleteConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(errorBody("VILLAGE_DELETE_CONFLICT", ex.getMessage()));
     }
 }
