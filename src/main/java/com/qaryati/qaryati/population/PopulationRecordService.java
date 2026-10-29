@@ -1,5 +1,6 @@
 package com.qaryati.qaryati.population;
 
+import com.qaryati.qaryati.audit.AuditLogService;
 import com.qaryati.qaryati.user.User;
 import com.qaryati.qaryati.user.UserRepository;
 import com.qaryati.qaryati.village.Village;
@@ -7,8 +8,10 @@ import com.qaryati.qaryati.village.VillageNotFoundException;
 import com.qaryati.qaryati.village.VillageRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class PopulationRecordService {
@@ -16,13 +19,17 @@ public class PopulationRecordService {
     private final PopulationRecordRepository populationRecordRepository;
     private final VillageRepository villageRepository;
     private final UserRepository userRepository;
+    private final AuditLogService auditLogService;
 
-    public PopulationRecordService(PopulationRecordRepository populationRecordRepository,
-                                   VillageRepository villageRepository,
-                                   UserRepository userRepository) {
+    public PopulationRecordService(
+            PopulationRecordRepository populationRecordRepository,
+            VillageRepository villageRepository,
+            UserRepository userRepository,
+            AuditLogService auditLogService) {
         this.populationRecordRepository = populationRecordRepository;
         this.villageRepository = villageRepository;
         this.userRepository = userRepository;
+        this.auditLogService = auditLogService;
     }
 
     public List<PopulationRecord> getHistory(Long villageId) {
@@ -32,13 +39,21 @@ public class PopulationRecordService {
         return populationRecordRepository.findByVillageIdOrderByYearAsc(villageId);
     }
 
-    public PopulationRecord createRecord(Long villageId, CreatePopulationRecordRequest request) {
+    public PopulationRecord createRecord(
+            Long villageId,
+            CreatePopulationRecordRequest request) {
+
         Village village = villageRepository.findById(villageId)
                 .orElseThrow(() -> new VillageNotFoundException(villageId));
 
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        String currentUsername = SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
+
         User currentUser = userRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> new IllegalStateException("Authenticated user not found: " + currentUsername));
+                .orElseThrow(() -> new IllegalStateException(
+                        "Authenticated user not found: " + currentUsername));
 
         PopulationRecord record = new PopulationRecord(
                 village,
@@ -52,41 +67,82 @@ public class PopulationRecordService {
 
         return populationRecordRepository.save(record);
     }
-    public PopulationRecord reviewRecord(Long villageId, Long recordId, ReviewDecisionRequest request) {
-        PopulationRecord record = populationRecordRepository.findById(recordId)
-                .orElseThrow(() -> new InvalidReviewException("Population record with id " + recordId + " does not exist"));
 
-        if (!java.util.Objects.equals(record.getVillage().getId(), villageId)) {
-            throw new InvalidReviewException("Record " + recordId + " does not belong to village " + villageId);
+    @Transactional
+    public PopulationRecord reviewRecord(
+            Long villageId,
+            Long recordId,
+            ReviewDecisionRequest request) {
+
+        PopulationRecord record = populationRecordRepository.findById(recordId)
+                .orElseThrow(() -> new PopulationRecordNotFoundException(recordId));
+
+        if (!Objects.equals(record.getVillage().getId(), villageId)) {
+            throw new InvalidReviewException(
+                    "Record " + recordId + " does not belong to village " + villageId);
         }
 
         if (record.getStatus() != PopulationStatus.PENDING) {
-            throw new InvalidReviewException("Only PENDING records can be reviewed; this record is already " + record.getStatus());
+            throw new InvalidReviewException(
+                    "Only PENDING records can be reviewed; this record is already "
+                            + record.getStatus());
         }
 
         if (request.status() == PopulationStatus.PENDING) {
-            throw new InvalidReviewException("Cannot set review status back to PENDING");
+            throw new InvalidReviewException(
+                    "Cannot set review status back to PENDING");
         }
 
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        User reviewer = userRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> new IllegalStateException("Authenticated user not found: " + currentUsername));
+        String currentUsername = SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
 
-        record.review(request.status(), reviewer);
-        return populationRecordRepository.save(record);
+        User reviewer = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Authenticated user not found: " + currentUsername));
+
+        String oldStatus = record.getStatus().name();
+
+        record.review(
+                request.status(),
+                reviewer,
+                request.reviewNotes()
+        );
+
+        PopulationRecord saved = populationRecordRepository.save(record);
+
+        auditLogService.record(
+                "REVIEW",
+                "POPULATION_RECORD",
+                saved.getId(),
+                oldStatus,
+                saved.getStatus().name()
+        );
+
+        return saved;
     }
 
-    public PopulationStatsResponse getStats(Long villageId, Integer fromYear, Integer toYear) {
+    public PopulationStatsResponse getStats(
+            Long villageId,
+            Integer fromYear,
+            Integer toYear) {
+
         if (!villageRepository.existsById(villageId)) {
             throw new VillageNotFoundException(villageId);
         }
 
         if (fromYear > toYear) {
-            throw new InvalidReviewException("fromYear must not be after toYear");
+            throw new InvalidReviewException(
+                    "fromYear must not be after toYear");
         }
 
-        List<Object[]> rows = populationRecordRepository.getPopulationStats(villageId, fromYear, toYear);
-        Object[] row = rows.isEmpty() ? new Object[]{null, null, null, 0L} : rows.get(0);
+        List<Object[]> rows = populationRecordRepository
+                .getPopulationStats(villageId, fromYear, toYear);
+
+        Object[] row = rows.isEmpty()
+                ? new Object[]{null, null, null, 0L}
+                : rows.get(0);
 
         return new PopulationStatsResponse(
                 villageId,

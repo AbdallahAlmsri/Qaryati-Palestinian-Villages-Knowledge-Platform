@@ -1,5 +1,6 @@
 package com.qaryati.qaryati.villagename;
 
+import com.qaryati.qaryati.audit.AuditLogService;
 import com.qaryati.qaryati.user.User;
 import com.qaryati.qaryati.user.UserRepository;
 import com.qaryati.qaryati.village.Village;
@@ -7,6 +8,7 @@ import com.qaryati.qaryati.village.VillageNotFoundException;
 import com.qaryati.qaryati.village.VillageRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -16,13 +18,16 @@ public class VillageNameService {
     private final VillageNameRepository villageNameRepository;
     private final VillageRepository villageRepository;
     private final UserRepository userRepository;
+    private final AuditLogService auditLogService;
 
     public VillageNameService(VillageNameRepository villageNameRepository,
                               VillageRepository villageRepository,
-                              UserRepository userRepository) {
+                              UserRepository userRepository,
+                              AuditLogService auditLogService) {
         this.villageNameRepository = villageNameRepository;
         this.villageRepository = villageRepository;
         this.userRepository = userRepository;
+        this.auditLogService = auditLogService;
     }
 
     public List<VillageNameResponse> getNames(Long villageId) {
@@ -63,5 +68,53 @@ public class VillageNameService {
         VillageName savedName = villageNameRepository.save(villageName);
 
         return VillageNameResponse.from(savedName);
+    }
+
+    @Transactional
+    public VillageNameResponse reviewName(
+            Long villageId,
+            Long nameId,
+            VillageNameReviewRequest request) {
+
+        VillageName villageName = villageNameRepository.findById(nameId)
+                .orElseThrow(() -> new VillageNameNotFoundException(nameId));
+
+        if (!villageName.getVillage().getId().equals(villageId)) {
+            throw new com.qaryati.qaryati.population.InvalidReviewException(
+                    "Village name does not belong to village " + villageId);
+        }
+
+        if (!"PENDING".equals(villageName.getStatus())) {
+            throw new com.qaryati.qaryati.population.InvalidReviewException(
+                    "Only PENDING village names can be reviewed");
+        }
+
+        String username = SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getName();
+
+        User reviewer = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Authenticated user not found: " + username));
+
+        String oldStatus = villageName.getStatus();
+
+        villageName.review(
+                request.status(),
+                reviewer,
+                request.reviewNotes()
+        );
+
+        VillageName saved = villageNameRepository.save(villageName);
+
+        auditLogService.record(
+                "REVIEW",
+                "VILLAGE_NAME",
+                saved.getId(),
+                oldStatus,
+                saved.getStatus()
+        );
+
+        return VillageNameResponse.from(saved);
     }
 }

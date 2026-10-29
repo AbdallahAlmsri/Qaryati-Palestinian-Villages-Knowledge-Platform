@@ -31,4 +31,14 @@ public class VillageNameController {
         VillageNameResponse saved = villageNameService.createName(villageId, request);
         return ResponseEntity.status(201).body(saved);
     }
+
+    @PatchMapping("/{nameId}/review")
+    @PreAuthorize("hasAnyRole('VERIFIER', 'ADMIN')")
+    public VillageNameResponse reviewName(
+            @PathVariable Long villageId,
+            @PathVariable Long nameId,
+            @Valid @RequestBody VillageNameReviewRequest request
+    ) {
+        return villageNameService.reviewName(villageId, nameId, request);
+    }
 }
