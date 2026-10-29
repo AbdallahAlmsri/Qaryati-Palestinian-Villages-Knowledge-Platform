@@ -58,3 +58,22 @@ Each virtual user repeatedly browses the public village list, with 0.25–0.75 s
 
 Requests are tagged `list`, `search` and `filter`, so the summary shows response times per type. The run fails
 if more than 1% of requests fail or any type's p95 goes above 500 ms.
+
+### Write scenario (`write-villages.js`)
+
+```bash
+docker run --rm -i -v "$PWD/loadtest:/loadtest" grafana/k6:1.0.0 run /loadtest/k6/write-villages.js
+```
+
+`setup()` registers a fresh user and **logs in once**. Every virtual user then shares that token, so the
+login rate limit (10 per minute per IP) is never reached and only the writes are measured. Each iteration:
+
+- **creates a village** (tagged `create_village`), and
+- half the time **adds a name** to it (tagged `add_name`), a second write path with its own validation.
+
+Defaults: 10 virtual users, 0.5–1 s between actions. Extra options: `GOVERNORATE_ID` (default 1) for the new
+villages. The run fails if more than 1% of requests fail or a write's p95 goes above 800 ms. The one-off
+register and login are tagged `setup` and are not part of the write numbers.
+
+Created villages end with `(load test data)`, so the cleanup script, or simply running the seed again,
+removes them. Run the seed again before a measurement so every run starts from the same data.
