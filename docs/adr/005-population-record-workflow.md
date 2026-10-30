@@ -32,7 +32,7 @@ source S, submitted by user U at time T.
    non-blank `source` (at most 255 characters). The database repeats these rules as `CHECK` constraints, so data that
    bypasses the API is also rejected.
 5. **Statistics use verified data only.** `GET /villages/{id}/population/stats` (native SQL) computes minimum,
-   maximum, average and count over `VERIFIED` records, optionally limited by `fromYear` and `toYear`. Pending and
+   maximum, average and count over the `VERIFIED` records between the required `fromYear` and `toYear`. Pending and
    rejected claims never affect a statistic.
 6. **Who can do what.** Any logged-in user can submit. Only `VERIFIER` and `ADMIN` can review. Reading is public.
 

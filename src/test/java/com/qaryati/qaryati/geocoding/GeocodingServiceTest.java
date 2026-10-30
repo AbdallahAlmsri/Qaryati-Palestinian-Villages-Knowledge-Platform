@@ -6,6 +6,7 @@ import com.qaryati.qaryati.village.VillageNotFoundException;
 import com.qaryati.qaryati.village.VillageRepository;
 import com.qaryati.qaryati.villagename.VillageName;
 import com.qaryati.qaryati.villagename.VillageNameRepository;
+import com.qaryati.qaryati.villagename.VillageNameStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -48,8 +49,8 @@ class GeocodingServiceTest {
         when(villageName.getName()).thenReturn(name);
 
         when(villageNameRepository
-                .findFirstByVillageIdAndLanguageIgnoreCaseAndStatusIgnoreCaseOrderByIdDesc(
-                        villageId, "ar", "VERIFIED"))
+                .findFirstByVillageIdAndLanguageIgnoreCaseAndStatusOrderByIdDesc(
+                        villageId, "ar", VillageNameStatus.VERIFIED))
                 .thenReturn(Optional.of(villageName));
     }
 
@@ -67,8 +68,8 @@ class GeocodingServiceTest {
                 .thenReturn(Optional.of(villageWith("32.1521", "35.2571")));
 
         when(villageNameRepository
-                .findFirstByVillageIdAndLanguageIgnoreCaseAndStatusIgnoreCaseOrderByIdDesc(
-                        1L, "ar", "VERIFIED"))
+                .findFirstByVillageIdAndLanguageIgnoreCaseAndStatusOrderByIdDesc(
+                        1L, "ar", VillageNameStatus.VERIFIED))
                 .thenReturn(Optional.empty());
 
         assertThrows(MissingVerifiedArabicNameException.class,

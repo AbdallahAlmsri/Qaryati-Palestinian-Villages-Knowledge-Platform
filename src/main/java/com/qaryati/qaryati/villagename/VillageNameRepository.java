@@ -9,8 +9,8 @@ public interface VillageNameRepository extends JpaRepository<VillageName, Long> 
 
     List<VillageName> findByVillageId(Long villageId);
 
-    Optional<VillageName> findFirstByVillageIdAndLanguageIgnoreCaseAndStatusIgnoreCaseOrderByIdDesc(
-            Long villageId, String language, String status
+    Optional<VillageName> findFirstByVillageIdAndLanguageIgnoreCaseAndStatusOrderByIdDesc(
+            Long villageId, String language, VillageNameStatus status
     );
 
     Optional<VillageName> findFirstByVillageIdAndLanguageIgnoreCaseOrderByIdDesc(

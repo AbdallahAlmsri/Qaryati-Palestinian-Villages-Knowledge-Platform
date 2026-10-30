@@ -23,6 +23,23 @@ DB_USER="${DB_USERNAME:-qaryati_user}"
 DB_NAME="${DB_NAME:-qaryati}"
 
 TMP="$(mktemp)"
+
+# Pre-flight: stop early with one clear message instead of dozens of failures
+if ! curl -s -o /dev/null --max-time 5 "$BASE/v3/api-docs"; then
+  echo "The app is not answering at $BASE."
+  echo "Start it with 'docker compose up --build', wait until the log says the application has started,"
+  echo "then run this script again from a second terminal. To see why it is down: docker compose ps"
+  echo "and docker compose logs app --tail 40"
+  rm -f "$TMP"
+  exit 2
+fi
+if ! docker exec "$CONTAINER" pg_isready -U "$DB_USER" -d "$DB_NAME" > /dev/null 2>&1; then
+  echo "The app answers, but the database container '$CONTAINER' is not reachable with 'docker exec'."
+  echo "Run this script from the project folder (it reads .env there), and check the container name with: docker ps"
+  rm -f "$TMP"
+  exit 2
+fi
+
 PASSES=0
 FAILS=0
 STATUS=""
@@ -120,7 +137,7 @@ PID="$(json_id)"
 req POST "/villages/$VID/population" "$CONTRIB" '{"population":5100,"year":2020,"source":"Smoke test census"}'
 expect "same village, year and source again is refused" "409"
 
-req GET "/villages/$VID/population/stats"
+req GET "/villages/$VID/population/stats?fromYear=1800&toYear=2100"
 expect "statistics (public)" "200"
 has "pending records do not count" '"recordCount":0'
 
@@ -130,7 +147,7 @@ req PATCH "/villages/$VID/population/$PID/review" "$VERIFIER" '{"status":"VERIFI
 expect "a verifier approves the record" "200"
 req PATCH "/villages/$VID/population/$PID/review" "$VERIFIER" '{"status":"REJECTED","reviewNotes":"again"}'
 expect "a reviewed record cannot be reviewed again" "422"
-req GET "/villages/$VID/population/stats"
+req GET "/villages/$VID/population/stats?fromYear=1800&toYear=2100"
 has "verified record is counted" '"recordCount":1'
 has "statistics show the population" '"minPopulation":5000'
 
