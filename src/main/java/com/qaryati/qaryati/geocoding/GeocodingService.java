@@ -4,6 +4,7 @@ import com.qaryati.qaryati.village.Village;
 import com.qaryati.qaryati.village.VillageRepository;
 import com.qaryati.qaryati.village.VillageNotFoundException;
 import com.qaryati.qaryati.villagename.VillageNameRepository;
+import com.qaryati.qaryati.villagename.VillageNameStatus;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -30,7 +31,7 @@ public class GeocodingService {
                 .orElseThrow(() -> new VillageNotFoundException(villageId));
 
         String arabicName = villageNameRepository
-                .findFirstByVillageIdAndLanguageIgnoreCaseAndStatusIgnoreCaseOrderByIdDesc(villageId, "ar", "VERIFIED")
+                .findFirstByVillageIdAndLanguageIgnoreCaseAndStatusOrderByIdDesc(villageId, "ar", VillageNameStatus.VERIFIED)
                 .map(villageName -> villageName.getName())
                 .filter(name -> !name.isBlank())
                 .orElseThrow(() -> new MissingVerifiedArabicNameException(
