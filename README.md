@@ -160,7 +160,7 @@ curl -X POST http://localhost:8080/api/v1/auth/register \
   -d '{"username":"sara","email":"sara@example.com","password":"password123"}'
 ```
 
-Both register and login return `{"token": "..."}`. Send it on protected requests:
+Both register and login return `{"token": "...", "username": "...", "role": "..."}`. Send the token on protected requests:
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/villages \
@@ -250,7 +250,7 @@ Validation errors add a `fields` object naming each invalid field. Every respons
 │   ├── population/    Population history, review workflow, statistics (native SQL)
 │   ├── history/       Historical events, landmarks and cultural attributes
 │   ├── economy/       Agriculture, economy and facilities
-│   ├── audit/         Audit log of review decisions
+│   ├── audit/         Audit log: review decisions, role changes and village changes
 │   ├── governorate/   Governorates and municipalities
 │   ├── geocoding/     Nominatim client behind the LocationProvider interface (timeouts, rate limit)
 │   ├── config/        Security, CORS, login rate limit, correlation IDs, JSON 401/403 responses
@@ -266,6 +266,7 @@ Validation errors add a `fields` object naming each invalid field. Every respons
 │   ├── diagrams/                       ERD and architecture diagram
 │   ├── configuration.md                Profiles and secrets
 │   └── *.md                            One page per feature (see Further documentation)
+├── loadtest/                          k6 scripts and seed data for the performance report
 ├── .github/                            CI workflow and Pull Request template
 ├── Dockerfile                          Two-stage build: Maven build, then a JRE-only image
 ├── docker-compose.yml                  PostgreSQL + the application
@@ -320,10 +321,14 @@ decisions get an ADR in `docs/adr`.
 - [ADR 001: Backend framework choice](docs/adr/001-backend-framework-choice.md)
 - [ADR 002: Clean architecture and the service layer](docs/adr/002-clean-architecture-service-layer.md)
 - [ADR 003: Audit logs share the business transaction](docs/adr/003-audit-log-transaction-boundary.md)
+- [ADR 004: Nearby search with native SQL, and municipalities as reference data](docs/adr/004-nearby-search-native-sql-and-municipalities.md)
+- [ADR 005: Population records are append-only claims with a review workflow](docs/adr/005-population-record-workflow.md)
+- [ADR 006: Cache geocoding results only](docs/adr/006-geocoding-cache-strategy.md)
+- [ADR 007: A trigram index for village name search](docs/adr/007-trigram-search-index.md)
 - [Configuration and profiles](docs/configuration.md)
 - [Database ERD](docs/diagrams/erd.md) and [architecture diagram](docs/diagrams/architecture.md)
+- [Performance report](docs/performance-report.md) and the [load tests](loadtest/README.md)
 - Swagger UI at <http://localhost:8080/swagger-ui.html> while the app is running
-
 Feature pages:
 
 - [History and heritage](docs/history-heritage.md)
