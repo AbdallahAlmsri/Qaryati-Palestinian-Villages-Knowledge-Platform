@@ -55,8 +55,8 @@ public class NominatimLocationProvider implements LocationProvider {
 
     @Override
     @Cacheable(value = "geocodeResults", key = "#query", unless = "#result == null")
-    @CircuitBreaker(name = "nominatim", fallbackMethod = "geocodeFallback")
-    @Retry(name = "nominatim")
+    @Retry(name = "nominatim", fallbackMethod = "geocodeFallback")
+    @CircuitBreaker(name = "nominatim")
     public Optional<GeocodeResult> geocode(String query) {
         synchronized (rateLimitLock) {
             waitForRateLimit();
