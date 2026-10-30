@@ -16,6 +16,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.qaryati.qaryati.audit.AuditLogService;
 
 import java.util.List;
 import java.util.Set;
@@ -39,15 +40,18 @@ public class VillageService {
     private final GovernorateRepository governorateRepository;
     private final MunicipalityRepository municipalityRepository;
     private final PopulationRecordRepository populationRecordRepository;
+    private final AuditLogService auditLogService;
 
     public VillageService(VillageRepository villageRepository,
                           GovernorateRepository governorateRepository,
                           MunicipalityRepository municipalityRepository,
-                          PopulationRecordRepository populationRecordRepository) {
+                          PopulationRecordRepository populationRecordRepository,
+                          AuditLogService auditLogService) {
         this.villageRepository = villageRepository;
         this.governorateRepository = governorateRepository;
         this.municipalityRepository = municipalityRepository;
         this.populationRecordRepository = populationRecordRepository;
+        this.auditLogService = auditLogService;
     }
 
     public Page<Village> search(Long governorateId, String q, int page, int size, String sort) {
@@ -103,6 +107,7 @@ public class VillageService {
         return villageRepository.findAll(spec, PageRequest.of(page, size, sorting));
     }
 
+    @Transactional
     public Village createVillage(CreateVillageRequest request) {
         Governorate governorate = governorateRepository.findById(request.governorateId())
                 .orElseThrow(() -> new GovernorateNotFoundException(request.governorateId()));
@@ -119,7 +124,9 @@ public class VillageService {
             village.setMunicipality(findMunicipalityIn(governorate, request.municipalityId()));
         }
 
-        return villageRepository.save(village);
+        Village saved = villageRepository.save(village);
+        auditLogService.record("CREATE", "VILLAGE", saved.getId(), null, describe(saved));
+        return saved;
     }
 
     public List<NearbyVillageRow> findNearby(Long villageId, double radiusKm, int limit) {
@@ -187,6 +194,8 @@ public class VillageService {
                 ? null
                 : findMunicipalityIn(governorate, request.municipalityId());
 
+        String before = describe(village);
+
         village.update(
                 governorate,
                 request.latitude(),
@@ -196,7 +205,9 @@ public class VillageService {
         );
         village.setMunicipality(municipality);
 
-        return villageRepository.save(village);
+        Village saved = villageRepository.save(village);
+        auditLogService.record("UPDATE", "VILLAGE", villageId, before, describe(saved));
+        return saved;
     }
 
     @Transactional
@@ -207,8 +218,22 @@ public class VillageService {
         if (populationRecordRepository.existsByVillageId(villageId)) {
             throw new VillageDeleteConflictException("Cannot delete a village with population records");
         }
+
+        String before = describe(village);
         villageRepository.delete(village);
         villageRepository.flush();
+        auditLogService.record("DELETE", "VILLAGE", villageId, before, null);
+    }
+
+    private static String describe(Village village) {
+        Long governorateId = village.getGovernorate() == null ? null : village.getGovernorate().getId();
+        Long municipalityId = village.getMunicipality() == null ? null : village.getMunicipality().getId();
+        return "governorateId=" + governorateId
+                + ", municipalityId=" + municipalityId
+                + ", latitude=" + village.getLatitude()
+                + ", longitude=" + village.getLongitude()
+                + ", elevationM=" + village.getElevationM()
+                + ", description=" + village.getLocationDescription();
     }
 
     private Sort parseSort(String sort) {

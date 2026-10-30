@@ -35,7 +35,6 @@ See [ADR 003](adr/003-audit-log-transaction-boundary.md).
 - Full test suite: *69 tests passed, 0 failures, 0 errors*.
 
 ## Known Gaps
-Audit coverage remains incomplete for role changes, village updates and deletions, village creation, and T3 unit operations. T7 remains open until these gaps and the remaining review-metadata privacy and audit integration tests are addressed.
-
+Audit entries are written for review decisions (population records, names, events, landmarks and attributes), role changes (ROLE_CHANGE on USER), and village create, update and delete (CREATE, UPDATE and DELETE on VILLAGE). Remaining gaps: creation of contributed records, every change to agriculture, economy and facilities records (which also lack review notes), and an endpoint to read the audit log.
 ## Migration Dependency
 The migration uses version V9 to avoid conflicting with the existing migration sequence.

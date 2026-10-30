@@ -21,6 +21,7 @@ import org.springframework.data.jpa.domain.Specification;
 import java.util.List;
 import java.math.BigDecimal;
 import java.util.Optional;
+import com.qaryati.qaryati.audit.AuditLogService;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -39,6 +40,9 @@ class VillageServiceTest {
 
     @Mock
     private PopulationRecordRepository populationRecordRepository;
+
+    @Mock
+    private AuditLogService auditLogService;
 
     @InjectMocks
     private VillageService villageService;
@@ -224,6 +228,8 @@ class VillageServiceTest {
                 () -> villageService.deleteVillage(1L));
 
         verify(villageRepository, never()).delete(any(Village.class));
+
+        verifyNoInteractions(auditLogService);
     }
 
     @Test
@@ -236,6 +242,8 @@ class VillageServiceTest {
         verify(populationRecordRepository).existsByVillageId(1L);
         verify(villageRepository).delete(village);
         verify(villageRepository).flush();
+
+        verify(auditLogService).record(eq("DELETE"), eq("VILLAGE"), eq(1L), anyString(), isNull());
     }
 
     @Test
@@ -300,5 +308,38 @@ class VillageServiceTest {
 
         verifyNoInteractions(populationRecordRepository);
         verify(villageRepository, never()).delete(any(Village.class));
+    }
+
+    @Test
+    void createVillage_recordsAnAuditEntry() {
+        Governorate nablus = governorateWithId(1L);
+        CreateVillageRequest request = new CreateVillageRequest(
+                1L, BigDecimal.valueOf(32.0), BigDecimal.valueOf(35.0), "Test", 500, null
+        );
+        Village saved = mock(Village.class);
+        when(saved.getId()).thenReturn(10L);
+        when(governorateRepository.findById(1L)).thenReturn(Optional.of(nablus));
+        when(villageRepository.save(any(Village.class))).thenReturn(saved);
+
+        villageService.createVillage(request);
+
+        verify(auditLogService).record(eq("CREATE"), eq("VILLAGE"), eq(10L), isNull(), anyString());
+    }
+
+    @Test
+    void updateVillage_recordsOldAndNewValues() {
+        Governorate nablus = governorateWithId(1L);
+        Village village = new Village(nablus,
+                BigDecimal.valueOf(32.0), BigDecimal.valueOf(35.0), "Before", 500);
+        UpdateVillageRequest request = new UpdateVillageRequest(
+                1L, BigDecimal.valueOf(32.0), BigDecimal.valueOf(35.0), "After", 500, null);
+        when(villageRepository.findById(5L)).thenReturn(Optional.of(village));
+        when(governorateRepository.findById(1L)).thenReturn(Optional.of(nablus));
+        when(villageRepository.save(any(Village.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        villageService.updateVillage(5L, request);
+
+        verify(auditLogService).record(
+                eq("UPDATE"), eq("VILLAGE"), eq(5L), contains("Before"), contains("After"));
     }
 }

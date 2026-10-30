@@ -33,7 +33,7 @@ added it. Contributors submit data, verifiers review it, and official statistics
   village's verified Arabic name
 - Accounts with roles: `VIEWER`, `CONTRIBUTOR`, `VERIFIER` and `ADMIN`. Administrators can edit and delete
   villages and change users' roles
-- An audit log of review decisions, written in the same transaction as the review
+- An audit log of review decisions, role changes and village changes, written in the same transaction as the change
 
 **Out of scope**
 

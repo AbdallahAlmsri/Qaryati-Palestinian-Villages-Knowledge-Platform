@@ -1,5 +1,6 @@
 package com.qaryati.qaryati.user;
 
+import com.qaryati.qaryati.audit.AuditLogService;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -8,9 +9,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserRoleService {
 
     private final UserRepository userRepository;
+    private final AuditLogService auditLogService;
 
-    public UserRoleService(UserRepository userRepository) {
+    public UserRoleService(UserRepository userRepository, AuditLogService auditLogService) {
         this.userRepository = userRepository;
+        this.auditLogService = auditLogService;
     }
 
     @Transactional
@@ -33,8 +36,11 @@ public class UserRoleService {
             throw new UserRoleConflictException("An admin cannot remove their own admin role");
         }
 
+        Role oldRole = user.getRole();
         user.changeRole(newRole);
+        User saved = userRepository.save(user);
 
-        return userRepository.save(user);
+        auditLogService.record("ROLE_CHANGE", "USER", userId, oldRole.name(), newRole.name());
+        return saved;
     }
 }
