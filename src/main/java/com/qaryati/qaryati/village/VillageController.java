@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/villages")
 public class VillageController {
@@ -55,5 +57,17 @@ public class VillageController {
     ) {
         villageService.deleteVillage(villageId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{villageId}/nearby")
+    public List<NearbyVillageResponse> getNearbyVillages(
+            @PathVariable Long villageId,
+            @RequestParam(defaultValue = "10") double radiusKm,
+            @RequestParam(defaultValue = "20") int limit
+    ) {
+        return villageService.findNearby(villageId, radiusKm, limit)
+                .stream()
+                .map(NearbyVillageResponse::from)
+                .toList();
     }
 }

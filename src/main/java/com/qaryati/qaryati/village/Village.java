@@ -1,6 +1,7 @@
 package com.qaryati.qaryati.village;
 
 import com.qaryati.qaryati.governorate.Governorate;
+import com.qaryati.qaryati.governorate.Municipality;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
@@ -15,6 +16,10 @@ public class Village {
     @ManyToOne
     @JoinColumn(name = "governorate_id", nullable = false)
     private Governorate governorate;
+
+    @ManyToOne
+    @JoinColumn(name = "municipality_id")
+    private Municipality municipality;
 
     private BigDecimal latitude;
     private BigDecimal longitude;
@@ -52,6 +57,14 @@ public class Village {
 
     public Governorate getGovernorate() {
         return governorate;
+    }
+
+    public Municipality getMunicipality() {
+        return municipality;
+    }
+
+    public void setMunicipality(Municipality municipality) {
+        this.municipality = municipality;
     }
 
     public BigDecimal getLatitude() {

@@ -1,7 +1,11 @@
 package com.qaryati.qaryati.village;
 
 import com.qaryati.qaryati.governorate.Governorate;
+import com.qaryati.qaryati.governorate.GovernorateNotFoundException;
 import com.qaryati.qaryati.governorate.GovernorateRepository;
+import com.qaryati.qaryati.governorate.InvalidMunicipalityException;
+import com.qaryati.qaryati.governorate.Municipality;
+import com.qaryati.qaryati.governorate.MunicipalityRepository;
 import com.qaryati.qaryati.population.PopulationRecordRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +35,9 @@ class VillageServiceTest {
     private GovernorateRepository governorateRepository;
 
     @Mock
+    private MunicipalityRepository municipalityRepository;
+
+    @Mock
     private PopulationRecordRepository populationRecordRepository;
 
     @InjectMocks
@@ -39,7 +46,7 @@ class VillageServiceTest {
     @Test
     void createVillage_throwsException_whenGovernorateDoesNotExist() {
         CreateVillageRequest request = new CreateVillageRequest(
-                999L, BigDecimal.valueOf(32.0), BigDecimal.valueOf(35.0), "Test", 500
+                999L, BigDecimal.valueOf(32.0), BigDecimal.valueOf(35.0), "Test", 500, null
         );
 
         when(governorateRepository.findById(999L)).thenReturn(Optional.empty());
@@ -51,7 +58,7 @@ class VillageServiceTest {
     @Test
     void createVillage_savesVillage_whenGovernorateExists() {
         Governorate governorate = new Governorate("Nablus");        CreateVillageRequest request = new CreateVillageRequest(
-                1L, BigDecimal.valueOf(32.0), BigDecimal.valueOf(35.0), "Test", 500
+                1L, BigDecimal.valueOf(32.0), BigDecimal.valueOf(35.0), "Test", 500, null
         );
 
         when(governorateRepository.findById(1L)).thenReturn(Optional.of(governorate));
@@ -100,6 +107,114 @@ class VillageServiceTest {
     }
 
     @Test
+    void createVillage_linksMunicipality_whenItIsInTheSameGovernorate() {
+        Governorate nablus = governorateWithId(1L);
+        Municipality municipality = new Municipality(nablus, "Nablus");
+        CreateVillageRequest request = new CreateVillageRequest(
+                1L, BigDecimal.valueOf(32.0), BigDecimal.valueOf(35.0), "Test", 500, 7L
+        );
+
+        when(governorateRepository.findById(1L)).thenReturn(Optional.of(nablus));
+        when(municipalityRepository.findById(7L)).thenReturn(Optional.of(municipality));
+        when(villageRepository.save(any(Village.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Village result = villageService.createVillage(request);
+
+        assertSame(municipality, result.getMunicipality());
+    }
+
+    @Test
+    void createVillage_rejectsMunicipalityFromAnotherGovernorate() {
+        Governorate nablus = governorateWithId(1L);
+        Municipality jeninMunicipality = new Municipality(governorateWithId(2L), "Jenin");
+        CreateVillageRequest request = new CreateVillageRequest(
+                1L, BigDecimal.valueOf(32.0), BigDecimal.valueOf(35.0), "Test", 500, 7L
+        );
+
+        when(governorateRepository.findById(1L)).thenReturn(Optional.of(nablus));
+        when(municipalityRepository.findById(7L)).thenReturn(Optional.of(jeninMunicipality));
+
+        assertThrows(InvalidMunicipalityException.class, () -> villageService.createVillage(request));
+        verify(villageRepository, never()).save(any());
+    }
+
+    @Test
+    void createVillage_rejectsUnknownMunicipality() {
+        CreateVillageRequest request = new CreateVillageRequest(
+                1L, BigDecimal.valueOf(32.0), BigDecimal.valueOf(35.0), "Test", 500, 999L
+        );
+
+        Governorate nablus = governorateWithId(1L);
+        when(governorateRepository.findById(1L)).thenReturn(Optional.of(nablus));
+        when(municipalityRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(InvalidMunicipalityException.class, () -> villageService.createVillage(request));
+        verify(villageRepository, never()).save(any());
+    }
+
+    @Test
+    void findNearby_rejectsRadiusOutOfRange() {
+        assertThrows(InvalidQueryException.class, () -> villageService.findNearby(1L, 0, 20));
+        assertThrows(InvalidQueryException.class, () -> villageService.findNearby(1L, -5, 20));
+        assertThrows(InvalidQueryException.class, () -> villageService.findNearby(1L, 101, 20));
+        assertThrows(InvalidQueryException.class, () -> villageService.findNearby(1L, Double.NaN, 20));
+        assertThrows(InvalidQueryException.class,
+                () -> villageService.findNearby(1L, Double.POSITIVE_INFINITY, 20));
+        verifyNoInteractions(villageRepository);
+    }
+
+    @Test
+    void findNearby_rejectsLimitOutOfRange() {
+        assertThrows(InvalidQueryException.class, () -> villageService.findNearby(1L, 10, 0));
+        assertThrows(InvalidQueryException.class, () -> villageService.findNearby(1L, 10, 101));
+        verifyNoInteractions(villageRepository);
+    }
+
+    @Test
+    void findNearby_throwsWhenVillageDoesNotExist() {
+        when(villageRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(VillageNotFoundException.class, () -> villageService.findNearby(999L, 10, 20));
+    }
+
+    @Test
+    void findNearby_rejectsVillageWithoutCoordinates() {
+        Village noCoordinates = new Village(governorateWithId(1L), null, null, "No location", null);
+        when(villageRepository.findById(5L)).thenReturn(Optional.of(noCoordinates));
+
+        assertThrows(InvalidQueryException.class, () -> villageService.findNearby(5L, 10, 20));
+    }
+
+    @Test
+    void findNearby_searchesABoundingBoxAroundTheVillage() {
+        Village village = new Village(governorateWithId(1L),
+                BigDecimal.valueOf(32.0), BigDecimal.valueOf(35.0), "Centre", 500);
+        when(villageRepository.findById(5L)).thenReturn(Optional.of(village));
+
+        villageService.findNearby(5L, 11.1045, 20);
+
+        // 11.1045 km is 0.1 degree of latitude; at 32°N a degree of longitude is shorter, so the box is wider
+        ArgumentCaptor<Double> minLat = ArgumentCaptor.forClass(Double.class);
+        ArgumentCaptor<Double> maxLat = ArgumentCaptor.forClass(Double.class);
+        ArgumentCaptor<Double> minLon = ArgumentCaptor.forClass(Double.class);
+        ArgumentCaptor<Double> maxLon = ArgumentCaptor.forClass(Double.class);
+        verify(villageRepository).findNearby(eq(5L), eq(32.0), eq(35.0),
+                minLat.capture(), maxLat.capture(), minLon.capture(), maxLon.capture(), eq(11.1045), eq(20));
+
+        assertEquals(31.9, minLat.getValue(), 1e-9);
+        assertEquals(32.1, maxLat.getValue(), 1e-9);
+        double expectedLonDelta = 0.1 / Math.cos(Math.toRadians(32.0));
+        assertEquals(35.0 - expectedLonDelta, minLon.getValue(), 1e-9);
+        assertEquals(35.0 + expectedLonDelta, maxLon.getValue(), 1e-9);
+    }
+
+    private static Governorate governorateWithId(Long id) {
+        Governorate governorate = mock(Governorate.class);
+        lenient().when(governorate.getId()).thenReturn(id);
+        return governorate;
+    }
+
+    @Test
     void deleteVillage_rejectsVillageWithPopulationRecords() {
         Village village = mock(Village.class);
         when(villageRepository.findById(1L)).thenReturn(Optional.of(village));
@@ -121,6 +236,59 @@ class VillageServiceTest {
         verify(populationRecordRepository).existsByVillageId(1L);
         verify(villageRepository).delete(village);
         verify(villageRepository).flush();
+    }
+
+    @Test
+    void updateVillage_linksMunicipalityInTheNewGovernorate() {
+        Governorate hebron = governorateWithId(2L);
+        Municipality hebronMunicipality = new Municipality(hebron, "Hebron");
+        Village village = new Village(governorateWithId(1L),
+                BigDecimal.valueOf(32.0), BigDecimal.valueOf(35.0), "Test", 500);
+        UpdateVillageRequest request = new UpdateVillageRequest(
+                2L, BigDecimal.valueOf(31.5), BigDecimal.valueOf(35.1), "Moved", 400, 7L);
+
+        when(villageRepository.findById(5L)).thenReturn(Optional.of(village));
+        when(governorateRepository.findById(2L)).thenReturn(Optional.of(hebron));
+        when(municipalityRepository.findById(7L)).thenReturn(Optional.of(hebronMunicipality));
+        when(villageRepository.save(any(Village.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        assertSame(hebronMunicipality, villageService.updateVillage(5L, request).getMunicipality());
+    }
+
+    @Test
+    void updateVillage_rejectsMunicipalityFromAnotherGovernorate() {
+        Governorate hebron = governorateWithId(2L);
+        Municipality nablusMunicipality = new Municipality(governorateWithId(1L), "Nablus");
+        Village village = new Village(governorateWithId(1L),
+                BigDecimal.valueOf(32.0), BigDecimal.valueOf(35.0), "Test", 500);
+        UpdateVillageRequest request = new UpdateVillageRequest(
+                2L, BigDecimal.valueOf(31.5), BigDecimal.valueOf(35.1), "Moved", 400, 7L);
+
+        when(villageRepository.findById(5L)).thenReturn(Optional.of(village));
+        when(governorateRepository.findById(2L)).thenReturn(Optional.of(hebron));
+        when(municipalityRepository.findById(7L)).thenReturn(Optional.of(nablusMunicipality));
+
+        assertThrows(InvalidMunicipalityException.class,
+                () -> villageService.updateVillage(5L, request));
+        verify(villageRepository, never()).save(any());
+        assertEquals("Test", village.getLocationDescription(), "a rejected update leaves the village unchanged");
+    }
+
+    @Test
+    void updateVillage_clearsMunicipalityWhenOmitted() {
+        Governorate nablus = governorateWithId(1L);
+        Village village = new Village(nablus,
+                BigDecimal.valueOf(32.0), BigDecimal.valueOf(35.0), "Test", 500);
+        village.setMunicipality(new Municipality(nablus, "Nablus"));
+        UpdateVillageRequest request = new UpdateVillageRequest(
+                1L, BigDecimal.valueOf(32.0), BigDecimal.valueOf(35.0), "Test", 500, null);
+
+        when(villageRepository.findById(5L)).thenReturn(Optional.of(village));
+        when(governorateRepository.findById(1L)).thenReturn(Optional.of(nablus));
+        when(villageRepository.save(any(Village.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        assertNull(villageService.updateVillage(5L, request).getMunicipality());
+        verifyNoInteractions(municipalityRepository);
     }
 
     @Test

@@ -5,6 +5,10 @@ erDiagram
 
     governorates ||--o{ villages : contains
 
+    governorates ||--o{ municipalities : contains
+
+    municipalities |o--o{ villages : contains
+
     villages ||--o{ village_names : has
 
     villages ||--o{ population_records : has
@@ -45,11 +49,25 @@ erDiagram
 
     }
 
+    municipalities {
+
+        bigint id PK
+
+        bigint governorate_id FK
+
+        varchar name
+
+        timestamptz created_at
+
+    }
+
     villages {
 
         bigint id PK
 
         bigint governorate_id FK
+
+        bigint municipality_id FK
 
         decimal latitude
 
@@ -226,7 +244,9 @@ erDiagram
 ```
 ## Notes
 
-- Based on Flyway migrations V1 through V6.
+- Based on Flyway migrations V1 through V6, plus the municipalities table from V10.
+
+- The municipalities table has a unique constraint on governorate_id and name. A village's municipality is optional (municipality_id is nullable) and must belong to the village's governorate.
 
 - PK means Primary Key, FK means Foreign Key, UK means Unique Key.
 

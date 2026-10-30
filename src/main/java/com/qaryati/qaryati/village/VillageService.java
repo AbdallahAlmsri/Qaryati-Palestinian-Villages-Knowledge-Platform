@@ -3,7 +3,11 @@ package com.qaryati.qaryati.village;
 import com.qaryati.qaryati.common.InvalidQueryException;
 import com.qaryati.qaryati.population.PopulationRecordRepository;
 import com.qaryati.qaryati.governorate.Governorate;
+import com.qaryati.qaryati.governorate.GovernorateNotFoundException;
 import com.qaryati.qaryati.governorate.GovernorateRepository;
+import com.qaryati.qaryati.governorate.InvalidMunicipalityException;
+import com.qaryati.qaryati.governorate.Municipality;
+import com.qaryati.qaryati.governorate.MunicipalityRepository;
 import com.qaryati.qaryati.villagename.VillageName;
 import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.domain.Page;
@@ -13,6 +17,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -24,15 +29,24 @@ public class VillageService {
 
     private static final int MAX_PAGE_SIZE = 100;
 
+    private static final double MAX_RADIUS_KM = 100;
+    private static final int MAX_NEARBY_LIMIT = 100;
+
+    // Kilometres per degree of latitude (and of longitude at the equator)
+    private static final double KM_PER_DEGREE = 111.045;
+
     private final VillageRepository villageRepository;
     private final GovernorateRepository governorateRepository;
+    private final MunicipalityRepository municipalityRepository;
     private final PopulationRecordRepository populationRecordRepository;
 
     public VillageService(VillageRepository villageRepository,
                           GovernorateRepository governorateRepository,
+                          MunicipalityRepository municipalityRepository,
                           PopulationRecordRepository populationRecordRepository) {
         this.villageRepository = villageRepository;
         this.governorateRepository = governorateRepository;
+        this.municipalityRepository = municipalityRepository;
         this.populationRecordRepository = populationRecordRepository;
     }
 
@@ -101,7 +115,61 @@ public class VillageService {
                 request.elevationM()
         );
 
+        if (request.municipalityId() != null) {
+            village.setMunicipality(findMunicipalityIn(governorate, request.municipalityId()));
+        }
+
         return villageRepository.save(village);
+    }
+
+    public List<NearbyVillageRow> findNearby(Long villageId, double radiusKm, int limit) {
+        // NaN fails every comparison, so it would slip past the range check on its own
+        if (Double.isNaN(radiusKm) || radiusKm <= 0 || radiusKm > MAX_RADIUS_KM) {
+            throw new InvalidQueryException("radiusKm must be greater than 0 and at most " + (int) MAX_RADIUS_KM);
+        }
+
+        if (limit < 1 || limit > MAX_NEARBY_LIMIT) {
+            throw new InvalidQueryException("limit must be between 1 and " + MAX_NEARBY_LIMIT);
+        }
+
+        Village village = villageRepository.findById(villageId)
+                .orElseThrow(() -> new VillageNotFoundException(villageId));
+
+        if (village.getLatitude() == null || village.getLongitude() == null) {
+            throw new InvalidQueryException("Village " + villageId + " has no coordinates, so nearby villages cannot be found");
+        }
+
+        double latitude = village.getLatitude().doubleValue();
+        double longitude = village.getLongitude().doubleValue();
+
+        // A degree of longitude shrinks towards the poles, so the box is wider in longitude than in latitude
+        double latitudeDelta = radiusKm / KM_PER_DEGREE;
+        double longitudeDelta = radiusKm / (KM_PER_DEGREE * Math.max(Math.cos(Math.toRadians(latitude)), 0.01));
+
+        return villageRepository.findNearby(
+                villageId,
+                latitude,
+                longitude,
+                latitude - latitudeDelta,
+                latitude + latitudeDelta,
+                longitude - longitudeDelta,
+                longitude + longitudeDelta,
+                radiusKm,
+                limit
+        );
+    }
+
+    private Municipality findMunicipalityIn(Governorate governorate, Long municipalityId) {
+        Municipality municipality = municipalityRepository.findById(municipalityId)
+                .orElseThrow(() -> new InvalidMunicipalityException(
+                        "Municipality with id " + municipalityId + " does not exist"));
+
+        if (!municipality.getGovernorate().getId().equals(governorate.getId())) {
+            throw new InvalidMunicipalityException(
+                    "Municipality " + municipalityId + " is not in governorate " + governorate.getId());
+        }
+
+        return municipality;
     }
 
     @Transactional
@@ -112,6 +180,13 @@ public class VillageService {
         Governorate governorate = governorateRepository.findById(request.governorateId())
                 .orElseThrow(() -> new GovernorateNotFoundException(request.governorateId()));
 
+        // A PUT replaces the whole village, so leaving municipalityId out clears it. A municipality that is
+        // given must belong to the (possibly new) governorate, the same rule as createVillage. Checked
+        // before anything changes, so a rejected request leaves the village untouched.
+        Municipality municipality = request.municipalityId() == null
+                ? null
+                : findMunicipalityIn(governorate, request.municipalityId());
+
         village.update(
                 governorate,
                 request.latitude(),
@@ -119,6 +194,7 @@ public class VillageService {
                 request.locationDescription(),
                 request.elevationM()
         );
+        village.setMunicipality(municipality);
 
         return villageRepository.save(village);
     }

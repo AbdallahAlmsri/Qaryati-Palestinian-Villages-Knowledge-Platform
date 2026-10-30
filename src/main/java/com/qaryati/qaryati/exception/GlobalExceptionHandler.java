@@ -1,6 +1,6 @@
 package com.qaryati.qaryati.exception;
 
-import com.qaryati.qaryati.village.GovernorateNotFoundException;
+import com.qaryati.qaryati.governorate.GovernorateNotFoundException;
 import com.qaryati.qaryati.village.VillageNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -56,6 +56,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleDataIntegrity(org.springframework.dao.DataIntegrityViolationException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(errorBody("DUPLICATE_OR_INVALID_DATA", "This record conflicts with an existing one (e.g., duplicate village/year/source) or violates a data constraint"));
+    }
+
+    @ExceptionHandler(com.qaryati.qaryati.governorate.InvalidMunicipalityException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidMunicipality(
+            com.qaryati.qaryati.governorate.InvalidMunicipalityException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(errorBody("INVALID_MUNICIPALITY", ex.getMessage()));
     }
 
     @ExceptionHandler(com.qaryati.qaryati.population.PopulationRecordNotFoundException.class)
