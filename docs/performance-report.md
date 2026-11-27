@@ -117,6 +117,34 @@ Options if search needs to get faster, in order of effort:
 None of these were needed to pass the thresholds: every request type stayed well under the 500 ms p95
 goal at 50 users, with 0 failed requests in every run.
 
+## 6. Throughput (re-run, 27 November 2026)
+
+The tests were run again on the current code (index in place) with the same data (20,000 villages) and the
+same stages: 15 s ramp-up, 1 min at peak, 10 s ramp-down. Application, database and k6 ran on the same machine.
+
+| Scenario | Requests | Throughput | Error rate | avg | p95 |
+|---|---|---|---|---|---|
+| Read (50 virtual users) | 6,952 | 81.0 req/s | 0.00% | 24.4 ms | 50.9 ms |
+| Write (10 virtual users) | 1,438 | 16.5 req/s | 0.00% | 14.1 ms | 19.5 ms |
+
+| Request | avg | p95 |
+|---|---|---|
+| list | 18.6 ms | 36.5 ms |
+| filter | 8.2 ms | 17.0 ms |
+| search | 38.2 ms | 61.6 ms |
+| create village | 13.4 ms | 19.6 ms |
+| add name | 11.7 ms | 17.7 ms |
+
+**How to read throughput here.** Each virtual user pauses 0.25-0.75 s (read) or 0.5-1 s (write) between
+requests, to behave like a person. Throughput is therefore set mostly by the number of users and their pauses,
+so 81 and 16.5 req/s are the load applied, not the maximum the system can handle. With no failures and
+latencies far below the thresholds (500 ms read, 800 ms write), the system had spare capacity at this load.
+The improvement from the index shows in the search latency (section 4), not in throughput.
+
+Results differ a little from the 29 October runs (for example, filter was faster this time) because the
+machine's load varies from run to run. The conclusion is the same: search is the slowest read, and the
+trigram index removed the bottleneck found in section 2.
+
 ## Notes on measuring
 
 - **Re-seeding leaves dead rows.** The seed deletes the previous load test data and inserts it again. Until
