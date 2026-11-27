@@ -28,6 +28,17 @@ All endpoints use the prefix /api/v1/villages/{villageId}.
 | POST | /attributes | Authenticated |
 | PATCH | /attributes/{entityId}/review | VERIFIER or ADMIN |
 
+## Historical Overview
+
+A village's narrative history is stored as a village attribute named `Historical overview`. Attributes are free-form name and value pairs with a mandatory source and the same PENDING / VERIFIED / REJECTED review workflow as every other record, so no separate table is needed. Example:
+
+    POST /api/v1/villages/{villageId}/attributes
+    {"attributeName": "Historical overview",
+     "attributeValue": "A short narrative history of the village.",
+     "source": "Village archive"}
+
+Other cultural attributes (traditional food, crafts, dialect) use the same endpoint with their own names.
+
 ## Review Workflow
 
 1. An authenticated user submits a record.

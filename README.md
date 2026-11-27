@@ -206,7 +206,7 @@ where `{kind}` is one of:
 | `population` | A population figure for a year. Listed oldest first |
 | `historical-events` | Dated events with a description |
 | `landmarks` | Landmarks with a type and optional coordinates |
-| `attributes` | Cultural attributes, such as traditional food and cultural heritage |
+| `attributes` | Cultural attributes, such as traditional food and cultural heritage, and the village's `Historical overview` |
 | `agriculture` | Crops grown in the village |
 | `economy` | Economic activities |
 | `facilities` | Public facilities, such as schools and clinics |
@@ -328,7 +328,9 @@ decisions get an ADR in `docs/adr`.
 - [Configuration and profiles](docs/configuration.md)
 - [Database ERD](docs/diagrams/erd.md) and [architecture diagram](docs/diagrams/architecture.md)
 - [Performance report](docs/performance-report.md) and the [load tests](loadtest/README.md)
+- [Security, logging and API documentation (PDF)](docs/security-logging-api.pdf): authentication, roles and permissions, request protection, logging and tracing, error format
 - Swagger UI at <http://localhost:8080/swagger-ui.html> while the app is running
+
 Feature pages:
 
 - [History and heritage](docs/history-heritage.md)
